@@ -1,0 +1,195 @@
+package services
+
+import (
+	"errors"
+	"fmt"
+	"ticketek-backend/clients"
+	"ticketek-backend/dao"
+	"ticketek-backend/domain"
+	"ticketek-backend/utils"
+)
+
+type TicketService struct {
+	ticketDAO   *dao.TicketDAO
+	eventDAO    *dao.EventDAO
+	userDAO     *dao.UserDAO
+	emailClient *clients.EmailClient
+}
+
+func NewTicketService(ticketDAO *dao.TicketDAO, eventDAO *dao.EventDAO, userDAO *dao.UserDAO, emailClient *clients.EmailClient) *TicketService {
+	return &TicketService{
+		ticketDAO:   ticketDAO,
+		eventDAO:    eventDAO,
+		userDAO:     userDAO,
+		emailClient: emailClient,
+	}
+}
+
+func (s *TicketService) Buy(userID, eventID uint) (*domain.Ticket, error) {
+	event, err := s.eventDAO.FindByID(eventID)
+	if err != nil {
+		return nil, errors.New("evento no encontrado")
+	}
+	if event.Status == domain.EventStatusCancelled {
+		return nil, errors.New("el evento está cancelado")
+	}
+	if event.Available <= 0 {
+		return nil, errors.New("no hay entradas disponibles")
+	}
+
+	user, err := s.userDAO.FindByID(userID)
+	if err != nil {
+		return nil, errors.New("usuario no encontrado")
+	}
+
+	ticket := &domain.Ticket{
+		UserID:  userID,
+		EventID: eventID,
+		Status:  domain.TicketStatusActive,
+		QRCode:  "",
+	}
+
+	if err := s.ticketDAO.Create(ticket); err != nil {
+		return nil, errors.New("error al procesar la compra")
+	}
+
+	qrData := utils.GenerateTicketQRData(ticket.ID, userID, eventID)
+	qrCode, err := utils.GenerateQRCode(qrData)
+	if err != nil {
+		return nil, fmt.Errorf("error generando QR: %w", err)
+	}
+
+	ticket.QRCode = qrCode
+	if err := s.ticketDAO.Update(ticket); err != nil {
+		return nil, errors.New("error guardando QR")
+	}
+
+	event.Available--
+	if err := s.eventDAO.Update(event); err != nil {
+		return nil, errors.New("error actualizando disponibilidad")
+	}
+
+	// Bonus: notificación por email
+	go s.emailClient.SendPurchaseConfirmation(user.Email, user.Name, event.Title, qrCode)
+
+	return ticket, nil
+}
+
+func (s *TicketService) GetMyTickets(userID uint) ([]domain.Ticket, error) {
+	return s.ticketDAO.FindByUserID(userID)
+}
+
+func (s *TicketService) Cancel(ticketID, userID uint) error {
+	ticket, err := s.ticketDAO.FindByID(ticketID)
+	if err != nil {
+		return errors.New("entrada no encontrada")
+	}
+	if ticket.UserID != userID {
+		return errors.New("no tenés permiso para cancelar esta entrada")
+	}
+	if ticket.Status != domain.TicketStatusActive {
+		return errors.New("la entrada no está activa")
+	}
+
+	ticket.Status = domain.TicketStatusCancelled
+	if err := s.ticketDAO.Update(ticket); err != nil {
+		return errors.New("error al cancelar la entrada")
+	}
+
+	event, err := s.eventDAO.FindByID(ticket.EventID)
+	if err == nil {
+		event.Available++
+		s.eventDAO.Update(event)
+	}
+
+	return nil
+}
+
+func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequest) (*domain.Ticket, error) {
+	ticket, err := s.ticketDAO.FindByID(ticketID)
+	if err != nil {
+		return nil, errors.New("entrada no encontrada")
+	}
+	if ticket.UserID != ownerID {
+		return nil, errors.New("no tenés permiso para traspasar esta entrada")
+	}
+	if ticket.Status != domain.TicketStatusActive {
+		return nil, errors.New("la entrada no está activa")
+	}
+
+	targetUser, err := s.userDAO.FindByEmail(req.TargetEmail)
+	if err != nil {
+		return nil, errors.New("usuario destino no encontrado")
+	}
+	if targetUser.ID == ownerID {
+		return nil, errors.New("no podés traspasar la entrada a vos mismo")
+	}
+
+	owner, err := s.userDAO.FindByID(ownerID)
+	if err != nil {
+		return nil, errors.New("error obteniendo datos del propietario")
+	}
+
+	// Generar nuevo QR para el nuevo titular
+	qrData := utils.GenerateTicketQRData(ticket.ID, targetUser.ID, ticket.EventID)
+	newQR, err := utils.GenerateQRCode(qrData)
+	if err != nil {
+		return nil, fmt.Errorf("error generando nuevo QR: %w", err)
+	}
+
+	ticket.UserID = targetUser.ID
+	ticket.QRCode = newQR
+	ticket.Status = domain.TicketStatusActive
+
+	if err := s.ticketDAO.Update(ticket); err != nil {
+		return nil, errors.New("error al traspasar la entrada")
+	}
+
+	event, _ := s.eventDAO.FindByID(ticket.EventID)
+	eventTitle := ""
+	if event != nil {
+		eventTitle = event.Title
+	}
+
+	// Bonus: notificación por email al nuevo titular
+	go s.emailClient.SendTransferNotification(targetUser.Email, targetUser.Name, owner.Name, eventTitle, newQR)
+
+	return ticket, nil
+}
+
+func (s *TicketService) GetEventReport(eventID uint) (*domain.EventReportResponse, error) {
+	event, err := s.eventDAO.FindByID(eventID)
+	if err != nil {
+		return nil, errors.New("evento no encontrado")
+	}
+
+	tickets, err := s.ticketDAO.FindByEventID(eventID)
+	if err != nil {
+		return nil, errors.New("error obteniendo tickets")
+	}
+
+	allTickets, _ := s.ticketDAO.FindByEventID(eventID)
+	cancelled := 0
+	buyers := []domain.User{}
+	seen := map[uint]bool{}
+
+	for _, t := range allTickets {
+		if t.Status == domain.TicketStatusCancelled {
+			cancelled++
+		}
+		if !seen[t.UserID] {
+			buyers = append(buyers, t.User)
+			seen[t.UserID] = true
+		}
+	}
+
+	return &domain.EventReportResponse{
+		EventID:        event.ID,
+		Title:          event.Title,
+		TotalCapacity:  event.Capacity,
+		TotalSold:      len(tickets),
+		TotalCancelled: cancelled,
+		Available:      event.Available,
+		Buyers:         buyers,
+	}, nil
+}

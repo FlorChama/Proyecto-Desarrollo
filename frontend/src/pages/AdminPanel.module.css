@@ -1,0 +1,315 @@
+.page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.topBar h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.newBtn {
+  background: var(--accent);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.newBtn:hover {
+  background: var(--accent-hover);
+}
+
+.loading {
+  text-align: center;
+  padding: 4rem;
+  color: var(--text-muted);
+}
+
+.message {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.message button { background: transparent; color: inherit; }
+.msgSuccess { background: rgba(46,204,113,0.1); border: 1px solid var(--success); color: var(--success); }
+.msgError { background: rgba(231,76,60,0.1); border: 1px solid var(--error); color: var(--error); }
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th {
+  background: var(--secondary);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.table tr:hover td {
+  background: rgba(255,255,255,0.02);
+}
+
+.statusActive {
+  color: var(--success);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.statusCancelled {
+  color: var(--error);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.actionBtns {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.editBtn, .reportBtn, .deleteBtn {
+  padding: 0.3rem 0.7rem;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.editBtn {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  background: transparent;
+}
+.editBtn:hover { background: var(--accent); color: white; }
+
+.reportBtn {
+  border: 1px solid #8e44ad;
+  color: #8e44ad;
+  background: transparent;
+}
+.reportBtn:hover { background: #8e44ad; color: white; }
+
+.deleteBtn {
+  border: 1px solid var(--error);
+  color: var(--error);
+  background: transparent;
+}
+.deleteBtn:hover { background: var(--error); color: white; }
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.modal {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modal h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.formError {
+  background: rgba(231,76,60,0.1);
+  border: 1px solid var(--error);
+  color: var(--error);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.field label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.field input, .field select, .field textarea {
+  padding: 0.65rem 0.9rem;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent);
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field select option {
+  background: var(--card-bg);
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.saveBtn {
+  flex: 1;
+  padding: 0.75rem;
+  background: var(--accent);
+  color: white;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+.saveBtn:hover:not(:disabled) { background: var(--accent-hover); }
+.saveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cancelModalBtn {
+  padding: 0.75rem 1.2rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.cancelModalBtn:hover { border-color: var(--text-muted); color: var(--text); }
+
+/* Report */
+.reportGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.reportStat {
+  background: var(--secondary);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.reportStat span {
+  display: block;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.reportStat label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.buyerList h3 {
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-muted);
+}
+
+.buyers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.buyer {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--secondary);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.buyer span:last-child {
+  color: var(--text-muted);
+}
+
+.closeBtn {
+  background: var(--accent);
+  color: white;
+  padding: 0.65rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  align-self: flex-end;
+}

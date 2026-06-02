@@ -1,0 +1,22 @@
+# Go
+backend/ticketek-backend
+backend/*.exe
+backend/vendor/
+
+# Node / React
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Env files
+.env
+backend/.env
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
