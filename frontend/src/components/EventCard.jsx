@@ -6,13 +6,14 @@ export default function EventCard({ event }) {
 
   const formatDate = (dateStr) => {
     const date = new Date(dateStr)
-    return date.toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })
+    return date.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })
   }
 
   const formatTime = (dateStr) => {
-    const date = new Date(dateStr)
-    return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+    return new Date(dateStr).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
   }
+
+  const isLow = event.available > 0 && event.available <= 10
 
   return (
     <div className={styles.card} onClick={() => navigate(`/eventos/${event.ID}`)}>
@@ -20,12 +21,14 @@ export default function EventCard({ event }) {
         {event.image_url ? (
           <img src={event.image_url} alt={event.title} className={styles.image} />
         ) : (
-          <div className={styles.imagePlaceholder}>
-            <span>🎭</span>
-          </div>
+          <div className={styles.imagePlaceholder}>🎭</div>
         )}
-        <span className={styles.category}>{event.category || 'General'}</span>
+        <div className={styles.imageOverlay} />
+        {event.category && <span className={styles.category}>{event.category}</span>}
         {event.available === 0 && <span className={styles.soldOut}>AGOTADO</span>}
+        <span className={styles.priceOverlay}>
+          {event.price === 0 ? 'Gratis' : `$${Number(event.price).toLocaleString('es-AR')}`}
+        </span>
       </div>
 
       <div className={styles.info}>
@@ -36,12 +39,17 @@ export default function EventCard({ event }) {
           <span>🕐 {formatTime(event.date)}</span>
         </div>
         <div className={styles.footer}>
-          <span className={styles.price}>
-            {event.price === 0 ? 'Gratis' : `$${event.price.toLocaleString('es-AR')}`}
+          <span className={`${styles.available} ${isLow ? styles.availableLow : ''}`}>
+            {event.available === 0
+              ? 'Sin disponibilidad'
+              : isLow
+              ? `⚡ Solo ${event.available} entradas`
+              : `${event.available} disponibles`}
           </span>
-          <span className={styles.available}>
-            {event.available > 0 ? `${event.available} disponibles` : 'Sin disponibilidad'}
-          </span>
+          {event.available > 0
+            ? <span className={styles.buyBtn}>Comprar</span>
+            : <span className={styles.buyBtnDisabled}>Agotado</span>
+          }
         </div>
       </div>
     </div>
