@@ -94,6 +94,26 @@ go test ./tests/ "-coverpkg=./services/...,./controllers/..." -cover
 > Si no hay una base de datos de test disponible, los tests de integración se
 > saltean automáticamente (no fallan el build).
 
+## Usuarios de Prueba
+
+El sistema maneja dos roles: **Cliente** y **Administrador**.
+
+- Cualquiera puede **registrarse** desde la pantalla de registro (queda con rol *cliente*).
+- El **primer administrador** se crea registrando un usuario y luego promoviéndolo en la base de datos:
+
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'admin@demo.com';
+```
+
+Credenciales de demostración sugeridas:
+
+| Rol | Email | Password |
+|-----|-------|----------|
+| 🛡️ Administrador | `admin@demo.com` | `admin123` |
+| 🙋 Cliente | `cliente@demo.com` | `cliente123` |
+
+> Estas cuentas no vienen cargadas: se crean registrándolas y (para el admin) ejecutando el `UPDATE` de arriba.
+
 ## Diagrama de Base de Datos
 
 > Fuente del diagrama en [`docs/diagrama-bd.md`](docs/diagrama-bd.md).
