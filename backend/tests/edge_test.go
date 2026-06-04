@@ -42,9 +42,9 @@ func TestCasosBordeNegocio(t *testing.T) {
 	c2Token, _ := registerUser(t, r, "Cli2", "cli2@test.com", "secret123")
 	eventID := createEvent(t, r, adminToken, 5)
 
-	// Comprar evento inexistente -> 400
-	if w := doRequest(r, "POST", "/api/tickets", cToken, map[string]uint{"event_id": 99999}); w.Code != http.StatusBadRequest {
-		t.Errorf("compra evento inexistente: esperado 400, obtenido %d", w.Code)
+	// Comprar evento inexistente -> 404
+	if w := doRequest(r, "POST", "/api/tickets", cToken, map[string]uint{"event_id": 99999}); w.Code != http.StatusNotFound {
+		t.Errorf("compra evento inexistente: esperado 404, obtenido %d", w.Code)
 	}
 
 	// Login sin password -> 400
@@ -57,14 +57,14 @@ func TestCasosBordeNegocio(t *testing.T) {
 		t.Errorf("reporte inexistente: esperado 404, obtenido %d", w.Code)
 	}
 
-	// Update de evento inexistente -> 400
-	if w := doRequest(r, "PUT", "/api/admin/events/99999", adminToken, map[string]string{"title": "x"}); w.Code != http.StatusBadRequest {
-		t.Errorf("update inexistente: esperado 400, obtenido %d", w.Code)
+	// Update de evento inexistente -> 404
+	if w := doRequest(r, "PUT", "/api/admin/events/99999", adminToken, map[string]string{"title": "x"}); w.Code != http.StatusNotFound {
+		t.Errorf("update inexistente: esperado 404, obtenido %d", w.Code)
 	}
 
-	// Cancelar evento inexistente -> 400
-	if w := doRequest(r, "DELETE", "/api/admin/events/99999", adminToken, nil); w.Code != http.StatusBadRequest {
-		t.Errorf("cancelar evento inexistente: esperado 400, obtenido %d", w.Code)
+	// Cancelar evento inexistente -> 404
+	if w := doRequest(r, "DELETE", "/api/admin/events/99999", adminToken, nil); w.Code != http.StatusNotFound {
+		t.Errorf("cancelar evento inexistente: esperado 404, obtenido %d", w.Code)
 	}
 
 	// Compramos un ticket con Cli para probar errores de tickets
@@ -77,9 +77,9 @@ func TestCasosBordeNegocio(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &buy)
 	tid := buy.Data.ID
 
-	// Cli2 intenta cancelar la entrada de Cli -> 400
-	if w := doRequest(r, "DELETE", fmt.Sprintf("/api/tickets/%d", tid), c2Token, nil); w.Code != http.StatusBadRequest {
-		t.Errorf("cancelar entrada ajena: esperado 400, obtenido %d", w.Code)
+	// Cli2 intenta cancelar la entrada de Cli -> 403 (no es el dueño)
+	if w := doRequest(r, "DELETE", fmt.Sprintf("/api/tickets/%d", tid), c2Token, nil); w.Code != http.StatusForbidden {
+		t.Errorf("cancelar entrada ajena: esperado 403, obtenido %d", w.Code)
 	}
 
 	// Transferir a uno mismo -> 400
@@ -88,10 +88,10 @@ func TestCasosBordeNegocio(t *testing.T) {
 		t.Errorf("transferir a uno mismo: esperado 400, obtenido %d", w.Code)
 	}
 
-	// Transferir a email inexistente -> 400
+	// Transferir a email inexistente -> 404 (usuario destino no encontrado)
 	if w := doRequest(r, "POST", fmt.Sprintf("/api/tickets/%d/transfer", tid), cToken,
-		map[string]string{"target_email": "noexiste@test.com"}); w.Code != http.StatusBadRequest {
-		t.Errorf("transferir a inexistente: esperado 400, obtenido %d", w.Code)
+		map[string]string{"target_email": "noexiste@test.com"}); w.Code != http.StatusNotFound {
+		t.Errorf("transferir a inexistente: esperado 404, obtenido %d", w.Code)
 	}
 
 	// Cancelar OK y luego intentar cancelar de nuevo -> 400

@@ -21,7 +21,7 @@ func (s *EventService) GetAll(filter domain.EventFilterRequest) ([]domain.Event,
 func (s *EventService) GetByID(id uint) (*domain.Event, error) {
 	event, err := s.eventDAO.FindByID(id)
 	if err != nil {
-		return nil, errors.New("evento no encontrado")
+		return nil, domain.ErrEventoNoEncontrado
 	}
 	return event, nil
 }
@@ -50,7 +50,7 @@ func (s *EventService) Create(req domain.CreateEventRequest) (*domain.Event, err
 func (s *EventService) Update(id uint, req domain.UpdateEventRequest) (*domain.Event, error) {
 	event, err := s.eventDAO.FindByID(id)
 	if err != nil {
-		return nil, errors.New("evento no encontrado")
+		return nil, domain.ErrEventoNoEncontrado
 	}
 	if event.Status == domain.EventStatusCancelled {
 		return nil, errors.New("no se puede modificar un evento cancelado")
@@ -85,7 +85,7 @@ func (s *EventService) Update(id uint, req domain.UpdateEventRequest) (*domain.E
 	if req.ImageURL != "" {
 		event.ImageURL = req.ImageURL
 	}
-	if req.Price >= 0 {
+	if req.Price > 0 {
 		event.Price = req.Price
 	}
 
@@ -98,7 +98,7 @@ func (s *EventService) Update(id uint, req domain.UpdateEventRequest) (*domain.E
 func (s *EventService) Cancel(id uint) error {
 	_, err := s.eventDAO.FindByID(id)
 	if err != nil {
-		return errors.New("evento no encontrado")
+		return domain.ErrEventoNoEncontrado
 	}
 	return s.eventDAO.Delete(id)
 }

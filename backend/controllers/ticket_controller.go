@@ -32,7 +32,7 @@ func (ctrl *TicketController) Buy(c *gin.Context) {
 
 	ticket, err := ctrl.ticketService.Buy(userID, body.EventID)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		utils.HandleServiceError(c, err)
 		return
 	}
 
@@ -63,7 +63,7 @@ func (ctrl *TicketController) Cancel(c *gin.Context) {
 	}
 
 	if err := ctrl.ticketService.Cancel(uint(id), userID); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		utils.HandleServiceError(c, err)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (ctrl *TicketController) Transfer(c *gin.Context) {
 
 	ticket, err := ctrl.ticketService.Transfer(uint(id), userID, req)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		utils.HandleServiceError(c, err)
 		return
 	}
 
@@ -105,7 +105,7 @@ func (ctrl *TicketController) GetEventReport(c *gin.Context) {
 
 	report, err := ctrl.ticketService.GetEventReport(uint(id))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, err.Error())
+		utils.HandleServiceError(c, err)
 		return
 	}
 

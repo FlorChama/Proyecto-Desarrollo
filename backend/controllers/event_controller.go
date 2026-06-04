@@ -45,7 +45,7 @@ func (ctrl *EventController) GetByID(c *gin.Context) {
 
 	event, err := ctrl.eventService.GetByID(uint(id))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, err.Error())
+		utils.HandleServiceError(c, err)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (ctrl *EventController) Update(c *gin.Context) {
 
 	event, err := ctrl.eventService.Update(uint(id), req)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		utils.HandleServiceError(c, err)
 		return
 	}
 
@@ -101,7 +101,7 @@ func (ctrl *EventController) Cancel(c *gin.Context) {
 	}
 
 	if err := ctrl.eventService.Cancel(uint(id)); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		utils.HandleServiceError(c, err)
 		return
 	}
 

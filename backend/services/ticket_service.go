@@ -28,7 +28,7 @@ func NewTicketService(ticketDAO *dao.TicketDAO, eventDAO *dao.EventDAO, userDAO 
 func (s *TicketService) Buy(userID, eventID uint) (*domain.Ticket, error) {
 	event, err := s.eventDAO.FindByID(eventID)
 	if err != nil {
-		return nil, errors.New("evento no encontrado")
+		return nil, domain.ErrEventoNoEncontrado
 	}
 	if event.Status == domain.EventStatusCancelled {
 		return nil, errors.New("el evento está cancelado")
@@ -39,7 +39,7 @@ func (s *TicketService) Buy(userID, eventID uint) (*domain.Ticket, error) {
 
 	user, err := s.userDAO.FindByID(userID)
 	if err != nil {
-		return nil, errors.New("usuario no encontrado")
+		return nil, domain.ErrUsuarioNoEncontrado
 	}
 
 	ticket := &domain.Ticket{
@@ -82,10 +82,10 @@ func (s *TicketService) GetMyTickets(userID uint) ([]domain.Ticket, error) {
 func (s *TicketService) Cancel(ticketID, userID uint) error {
 	ticket, err := s.ticketDAO.FindByID(ticketID)
 	if err != nil {
-		return errors.New("entrada no encontrada")
+		return domain.ErrEntradaNoEncontrada
 	}
 	if ticket.UserID != userID {
-		return errors.New("no tenés permiso para cancelar esta entrada")
+		return domain.ErrSinPermiso
 	}
 	if ticket.Status != domain.TicketStatusActive {
 		return errors.New("la entrada no está activa")
@@ -108,10 +108,10 @@ func (s *TicketService) Cancel(ticketID, userID uint) error {
 func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequest) (*domain.Ticket, error) {
 	ticket, err := s.ticketDAO.FindByID(ticketID)
 	if err != nil {
-		return nil, errors.New("entrada no encontrada")
+		return nil, domain.ErrEntradaNoEncontrada
 	}
 	if ticket.UserID != ownerID {
-		return nil, errors.New("no tenés permiso para traspasar esta entrada")
+		return nil, domain.ErrSinPermiso
 	}
 	if ticket.Status != domain.TicketStatusActive {
 		return nil, errors.New("la entrada no está activa")
@@ -119,7 +119,7 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 
 	targetUser, err := s.userDAO.FindByEmail(req.TargetEmail)
 	if err != nil {
-		return nil, errors.New("usuario destino no encontrado")
+		return nil, domain.ErrUsuarioNoEncontrado
 	}
 	if targetUser.ID == ownerID {
 		return nil, errors.New("no podés traspasar la entrada a vos mismo")
@@ -164,7 +164,7 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 func (s *TicketService) GetEventReport(eventID uint) (*domain.EventReportResponse, error) {
 	event, err := s.eventDAO.FindByID(eventID)
 	if err != nil {
-		return nil, errors.New("evento no encontrado")
+		return nil, domain.ErrEventoNoEncontrado
 	}
 
 	tickets, err := s.ticketDAO.FindByEventID(eventID)
