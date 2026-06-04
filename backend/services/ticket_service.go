@@ -167,12 +167,12 @@ func (s *TicketService) GetEventReport(eventID uint) (*domain.EventReportRespons
 		return nil, domain.ErrEventoNoEncontrado
 	}
 
-	tickets, err := s.ticketDAO.FindByEventID(eventID)
+	allTickets, err := s.ticketDAO.FindAllByEventID(eventID)
 	if err != nil {
 		return nil, errors.New("error obteniendo tickets")
 	}
 
-	allTickets, _ := s.ticketDAO.FindByEventID(eventID)
+	sold := 0
 	cancelled := 0
 	buyers := []domain.User{}
 	seen := map[uint]bool{}
@@ -180,6 +180,8 @@ func (s *TicketService) GetEventReport(eventID uint) (*domain.EventReportRespons
 	for _, t := range allTickets {
 		if t.Status == domain.TicketStatusCancelled {
 			cancelled++
+		} else {
+			sold++
 		}
 		if !seen[t.UserID] {
 			buyers = append(buyers, t.User)
@@ -191,7 +193,7 @@ func (s *TicketService) GetEventReport(eventID uint) (*domain.EventReportRespons
 		EventID:        event.ID,
 		Title:          event.Title,
 		TotalCapacity:  event.Capacity,
-		TotalSold:      len(tickets),
+		TotalSold:      sold,
 		TotalCancelled: cancelled,
 		Available:      event.Available,
 		Buyers:         buyers,

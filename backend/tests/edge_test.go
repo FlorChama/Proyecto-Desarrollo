@@ -33,6 +33,47 @@ func TestCasosBordeIDsInvalidos(t *testing.T) {
 	}
 }
 
+// TestReporteCuentaCanceladas verifica que el reporte distingue entradas
+// vendidas de canceladas.
+func TestReporteCuentaCanceladas(t *testing.T) {
+	db := setupTestDB(t)
+	r := setupTestServer(db)
+	adminToken, _ := createAdmin(t, db)
+	eventID := createEvent(t, r, adminToken, 10)
+
+	c1, _ := registerUser(t, r, "C1", "c1@test.com", "secret123")
+	c2, _ := registerUser(t, r, "C2", "c2@test.com", "secret123")
+
+	// Dos compras
+	w := doRequest(r, "POST", "/api/tickets", c1, map[string]uint{"event_id": eventID})
+	var b struct {
+		Data struct {
+			ID uint `json:"ID"`
+		} `json:"data"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &b)
+	doRequest(r, "POST", "/api/tickets", c2, map[string]uint{"event_id": eventID})
+
+	// C1 cancela su entrada
+	doRequest(r, "DELETE", fmt.Sprintf("/api/tickets/%d", b.Data.ID), c1, nil)
+
+	// Reporte: 1 vendida, 1 cancelada
+	w = doRequest(r, "GET", fmt.Sprintf("/api/admin/events/%d/report", eventID), adminToken, nil)
+	var rep struct {
+		Data struct {
+			TotalSold      int `json:"total_sold"`
+			TotalCancelled int `json:"total_cancelled"`
+		} `json:"data"`
+	}
+	json.Unmarshal(w.Body.Bytes(), &rep)
+	if rep.Data.TotalSold != 1 {
+		t.Errorf("total_sold: esperado 1, obtenido %d", rep.Data.TotalSold)
+	}
+	if rep.Data.TotalCancelled != 1 {
+		t.Errorf("total_cancelled: esperado 1, obtenido %d", rep.Data.TotalCancelled)
+	}
+}
+
 // TestCasosBordeNegocio cubre las validaciones de negocio en los services.
 func TestCasosBordeNegocio(t *testing.T) {
 	db := setupTestDB(t)

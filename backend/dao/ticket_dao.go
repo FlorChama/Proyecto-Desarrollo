@@ -39,6 +39,14 @@ func (d *TicketDAO) FindByEventID(eventID uint) ([]domain.Ticket, error) {
 	return tickets, err
 }
 
+// FindAllByEventID trae todas las entradas de un evento sin importar su estado
+// (activas y canceladas). Se usa para los reportes.
+func (d *TicketDAO) FindAllByEventID(eventID uint) ([]domain.Ticket, error) {
+	var tickets []domain.Ticket
+	err := d.db.Preload("User").Where("event_id = ?", eventID).Find(&tickets).Error
+	return tickets, err
+}
+
 func (d *TicketDAO) Update(ticket *domain.Ticket) error {
 	return d.db.Save(ticket).Error
 }
