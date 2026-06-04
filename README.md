@@ -66,14 +66,68 @@ npm run dev
 Frontend disponible en http://localhost:5173
 
 ### Ejecutar tests
+
+Los tests de integración necesitan un MySQL de test. La forma más simple es
+levantar un contenedor descartable en el puerto 3307:
+
 ```bash
-cd backend
-go test ./tests/... -v -cover
+docker run -d --name ticketek-test-mysql -e MYSQL_ROOT_PASSWORD=root \
+  -e MYSQL_DATABASE=ticketek_test -p 3307:3306 mysql:8.0
 ```
+
+Luego, desde `backend/`:
+
+```bash
+# Windows (PowerShell)
+$env:TEST_DB_PORT="3307"; go test ./tests/... -v
+
+# Linux / Mac
+TEST_DB_PORT=3307 go test ./tests/... -v
+```
+
+Cobertura sobre las capas de servicios y controladores (objetivo 80%):
+
+```bash
+go test ./tests/ "-coverpkg=./services/...,./controllers/..." -cover
+```
+
+> Si no hay una base de datos de test disponible, los tests de integración se
+> saltean automáticamente (no fallan el build).
 
 ## Diagrama de Base de Datos
 
-![DB Diagram](docs/db_diagram.png)
+> Fuente del diagrama en [`docs/diagrama-bd.md`](docs/diagrama-bd.md).
+
+```mermaid
+erDiagram
+    USER ||--o{ TICKET : "compra"
+    EVENT ||--o{ TICKET : "tiene"
+
+    USER {
+        uint id PK
+        string name
+        string email "único"
+        string password "hash SHA-256"
+        string role "client | admin"
+    }
+    EVENT {
+        uint id PK
+        string title
+        datetime date
+        string venue
+        int capacity
+        int available
+        float price
+        string status "active | cancelled"
+    }
+    TICKET {
+        uint id PK
+        uint user_id FK
+        uint event_id FK
+        string status "active | cancelled | transferred"
+        string qr_code "QR base64 (Bonus)"
+    }
+```
 
 ## Endpoints de la API
 
@@ -99,6 +153,8 @@ go test ./tests/... -v -cover
 **2. Generación del QR post-insert:** El código QR se genera con el ID del ticket recién creado como parte del string único (`TICKET-{id}-USER-{id}-EVENT-{id}`). Esto requiere un segundo `UPDATE` tras el `INSERT`, pero garantiza que el QR esté ligado al ID real de la base de datos, evitando colisiones y haciendo el código escaneable trazable al registro exacto.
 
 **3. Nuevo QR en traspaso:** Al transferir un ticket, se genera un nuevo código QR para el nuevo titular, invalidando el anterior. Esto impide que el titular original use una copia del QR anterior tras el traspaso.
+
+**4. Limpieza de asociaciones en el traspaso:** Al traspasar, el ticket se carga con las asociaciones precargadas (`Preload("User")`). Antes de guardar el nuevo titular, se limpian esas asociaciones para evitar que GORM reescriba la clave foránea `user_id` con el titular anterior. Este caso fue detectado y cubierto por los tests de integración.
 
 ## Bonus Track — Notificaciones por Email con QR
 
