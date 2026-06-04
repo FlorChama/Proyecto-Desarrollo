@@ -140,6 +140,10 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 	ticket.UserID = targetUser.ID
 	ticket.QRCode = newQR
 	ticket.Status = domain.TicketStatusActive
+	// Limpiamos las asociaciones precargadas (User/Event) para que GORM no
+	// reescriba la clave foránea user_id con el titular anterior al guardar.
+	ticket.User = domain.User{}
+	ticket.Event = domain.Event{}
 
 	if err := s.ticketDAO.Update(ticket); err != nil {
 		return nil, errors.New("error al traspasar la entrada")
