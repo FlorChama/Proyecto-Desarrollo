@@ -44,7 +44,7 @@ export default function EventCard({ event, size = 'md', grid = false }) {
           </button>
           <button
             className={styles.buyBtn}
-            onClick={() => navigate(`/eventos/${event.ID}`)}
+            onClick={() => navigate(`/checkout/${event.ID}`)}
           >
             Comprar
           </button>

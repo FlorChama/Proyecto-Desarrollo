@@ -14,7 +14,7 @@ const MOCK_EVENTS = [
     date: '2026-09-03', dates: ['2026-09-03'],
     venue: 'Hipódromo de San Isidro, Buenos Aires',
     capacity: 60000, available: 8500, category: 'internacional',
-    image_url: '/events/internacional2.png', price: 35000, status: 'active',
+    image_url: '/events/internacional2.png', price: 200000, vipPrice: 400000, status: 'active',
   },
   {
     ID: 3,
@@ -23,7 +23,7 @@ const MOCK_EVENTS = [
     date: '2026-08-01', dates: ['2026-08-01', '2026-08-02', '2026-08-04', '2026-08-06'],
     venue: 'Movistar Arena, Buenos Aires',
     capacity: 15000, available: 1200, category: 'internacional',
-    image_url: '/events/internacional3.png', price: 42000, status: 'active',
+    image_url: '/events/internacional3.png', price: 200000, vipPrice: 650000, status: 'active',
   },
   {
     ID: 4,
@@ -32,7 +32,7 @@ const MOCK_EVENTS = [
     date: '2026-10-21', dates: ['2026-10-21', '2026-10-23', '2026-10-24'],
     venue: 'Estadio Único de La Plata, Buenos Aires',
     capacity: 80000, available: 5200, category: 'internacional',
-    image_url: '/events/internacional1.png', price: 55000, status: 'active',
+    image_url: '/events/internacional1.png', price: 350000, vipPrice: 1000000, status: 'active',
   },
   {
     ID: 15,
@@ -41,7 +41,7 @@ const MOCK_EVENTS = [
     date: '2026-10-21', dates: ['2026-10-21', '2026-10-22'],
     venue: 'Movistar Arena, Buenos Aires',
     capacity: 15000, available: 500, category: 'internacional',
-    image_url: '/events/internacional4.png', price: 38000, status: 'active',
+    image_url: '/events/internacional4.png', price: 80000, vipPrice: 180000, status: 'active',
   },
   {
     ID: 5,
@@ -49,8 +49,8 @@ const MOCK_EVENTS = [
     description: 'El ex líder de Los Piojos regresa a Córdoba con su banda para un show histórico.',
     date: '2026-08-21', dates: ['2026-08-21'],
     venue: 'Plaza de la Música, Córdoba',
-    capacity: 20000, available: 4000, category: 'nacional',
-    image_url: '/events/nacional1.png', price: 18000, status: 'active',
+    capacity: 20000, available: 4000, category: 'nacional', noVip: true,
+    image_url: '/events/nacional1.png', price: 80000, status: 'active',
   },
   {
     ID: 6,
@@ -58,8 +58,8 @@ const MOCK_EVENTS = [
     description: 'La banda cordobesa presenta su nuevo show en la Plaza de la Música.',
     date: '2026-06-25', dates: ['2026-06-25'],
     venue: 'Plaza de la Música, Córdoba',
-    capacity: 15000, available: 2800, category: 'nacional',
-    image_url: '/events/nacional2.png', price: 16000, status: 'active',
+    capacity: 15000, available: 2800, category: 'nacional', noVip: true,
+    image_url: '/events/nacional2.png', price: 75000, status: 'active',
   },
   {
     ID: 7,
@@ -68,7 +68,7 @@ const MOCK_EVENTS = [
     date: '2026-07-08', dates: ['2026-07-08'],
     venue: 'Movistar Arena, Buenos Aires',
     capacity: 15000, available: 6000, category: 'nacional',
-    image_url: '/events/nacional3.png', price: 22000, status: 'active',
+    image_url: '/events/nacional3.png', price: 75000, vipPrice: 110000, status: 'active',
   },
   {
     ID: 8,
@@ -77,7 +77,7 @@ const MOCK_EVENTS = [
     date: '2026-09-19', dates: ['2026-09-19'],
     venue: 'Club Ciudad de Buenos Aires',
     capacity: 5000, available: 800, category: 'nacional',
-    image_url: '/events/nacional4.png', price: 12000, status: 'active',
+    image_url: '/events/nacional4.png', price: 111000, vipPrice: 160000, status: 'active',
   },
   {
     ID: 9,
@@ -86,7 +86,7 @@ const MOCK_EVENTS = [
     date: '2026-07-04', dates: ['2026-07-04'],
     venue: 'Estadio Obras, Buenos Aires',
     capacity: 8000, available: 1500, category: 'nacional',
-    image_url: '/events/nacional5.png', price: 14000, status: 'active',
+    image_url: '/events/nacional5.png', price: 55000, vipPrice: 100000, status: 'active',
   },
   {
     ID: 10,
@@ -95,7 +95,7 @@ const MOCK_EVENTS = [
     date: '2026-06-28', dates: ['2026-06-28'],
     venue: 'Teatro Ciudad de las Artes, Córdoba',
     capacity: 1200, available: 340, category: 'teatro',
-    image_url: '/events/teatro1.png', price: 9500, status: 'active',
+    image_url: '/events/teatro1.png', price: 45000, status: 'active',
   },
   {
     ID: 11,
@@ -104,7 +104,7 @@ const MOCK_EVENTS = [
     date: '2026-07-07', dates: ['2026-07-07'],
     venue: 'Movistar Arena, Buenos Aires',
     capacity: 15000, available: 2100, category: 'nacional',
-    image_url: '/events/teatro2.png', price: 25000, status: 'active',
+    image_url: '/events/teatro2.png', price: 60000, vipPrice: 120000, status: 'active',
   },
   {
     ID: 12,
@@ -113,7 +113,7 @@ const MOCK_EVENTS = [
     date: '2026-07-11', dates: ['2026-07-11', '2026-07-12', '2026-07-18', '2026-07-19'],
     venue: 'Teatro Avenida, Buenos Aires',
     capacity: 900, available: 220, category: 'teatro',
-    image_url: '/events/teatro3.png', price: 11000, status: 'active',
+    image_url: '/events/teatro3.png', price: 30000, status: 'active',
   },
   {
     ID: 13,
@@ -122,7 +122,7 @@ const MOCK_EVENTS = [
     date: '2026-09-05', dates: ['2026-09-05'],
     venue: 'Teatro Gran Rex, Buenos Aires',
     capacity: 1200, available: 380, category: 'standup',
-    image_url: '/events/standUp1.png', price: 7500, status: 'active',
+    image_url: '/events/standUp1.png', price: 20000, status: 'active',
   },
   {
     ID: 14,
@@ -131,7 +131,7 @@ const MOCK_EVENTS = [
     date: '2026-08-30', dates: ['2026-08-30'],
     venue: 'Studio Theater, Córdoba',
     capacity: 500, available: 140, category: 'standup',
-    image_url: '/events/standUp2.png', price: 6000, status: 'active',
+    image_url: '/events/standUp2.png', price: 20000, status: 'active',
   },
 ]
 
