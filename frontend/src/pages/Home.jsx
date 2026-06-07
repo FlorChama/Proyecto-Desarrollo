@@ -5,12 +5,13 @@ import EventCard from '../components/EventCard'
 import styles from './Home.module.css'
 
 // Eventos de prueba — se usan cuando la base de datos está vacía
+// "dates" lista todas las fechas del evento; "date" es la fecha principal (para mostrar)
 const MOCK_EVENTS = [
   {
     ID: 2,
     title: 'Maroon 5',
     description: 'La banda liderada por Adam Levine regresa a Argentina con su gira mundial.',
-    date: '2026-09-03T21:00:00',
+    date: '2026-09-03', dates: ['2026-09-03'],
     venue: 'Hipódromo de San Isidro, Buenos Aires',
     capacity: 60000, available: 8500, category: 'internacional',
     image_url: '/events/internacional2.png', price: 35000, status: 'active',
@@ -19,7 +20,7 @@ const MOCK_EVENTS = [
     ID: 3,
     title: 'Rosalía — LUX Tour 2026',
     description: 'La artista española presenta su nuevo álbum en una producción audiovisual única.',
-    date: '2026-10-20T21:30:00',
+    date: '2026-08-01', dates: ['2026-08-01', '2026-08-02', '2026-08-04', '2026-08-06'],
     venue: 'Movistar Arena, Buenos Aires',
     capacity: 15000, available: 1200, category: 'internacional',
     image_url: '/events/internacional3.png', price: 42000, status: 'active',
@@ -28,16 +29,25 @@ const MOCK_EVENTS = [
     ID: 4,
     title: 'BTS World Tour — Arirang',
     description: 'La banda de K-pop más grande del mundo llega a Argentina con tres fechas en el Estadio Único de La Plata.',
-    date: '2026-10-21T21:00:00',
+    date: '2026-10-21', dates: ['2026-10-21', '2026-10-23', '2026-10-24'],
     venue: 'Estadio Único de La Plata, Buenos Aires',
     capacity: 80000, available: 5200, category: 'internacional',
     image_url: '/events/internacional1.png', price: 55000, status: 'active',
   },
   {
+    ID: 15,
+    title: 'Aitana — Cuarto Azul World Tour',
+    description: 'La cantante española trae su gira mundial a Buenos Aires.',
+    date: '2026-10-21', dates: ['2026-10-21', '2026-10-22'],
+    venue: 'Movistar Arena, Buenos Aires',
+    capacity: 15000, available: 500, category: 'internacional',
+    image_url: '/events/internacional4.png', price: 38000, status: 'active',
+  },
+  {
     ID: 5,
     title: 'Ciro y los Persas',
     description: 'El ex líder de Los Piojos regresa a Córdoba con su banda para un show histórico.',
-    date: '2026-08-21T21:00:00',
+    date: '2026-08-21', dates: ['2026-08-21'],
     venue: 'Plaza de la Música, Córdoba',
     capacity: 20000, available: 4000, category: 'nacional',
     image_url: '/events/nacional1.png', price: 18000, status: 'active',
@@ -46,7 +56,7 @@ const MOCK_EVENTS = [
     ID: 6,
     title: 'Babasónicos',
     description: 'La banda cordobesa presenta su nuevo show en la Plaza de la Música.',
-    date: '2026-10-23T21:00:00',
+    date: '2026-06-25', dates: ['2026-06-25'],
     venue: 'Plaza de la Música, Córdoba',
     capacity: 15000, available: 2800, category: 'nacional',
     image_url: '/events/nacional2.png', price: 16000, status: 'active',
@@ -55,16 +65,16 @@ const MOCK_EVENTS = [
     ID: 7,
     title: 'Calamaro — Como Cantor',
     description: 'Andrés Calamaro en un show íntimo donde repasa toda su trayectoria solista.',
-    date: '2026-09-12T21:00:00',
+    date: '2026-07-08', dates: ['2026-07-08'],
     venue: 'Movistar Arena, Buenos Aires',
     capacity: 15000, available: 6000, category: 'nacional',
     image_url: '/events/nacional3.png', price: 22000, status: 'active',
   },
   {
     ID: 8,
-    title: 'Vuelve El Mató a un Policía Motorizado',
+    title: 'El Mató a un Policía Motorizado',
     description: 'El retorno de uno de los grupos más influyentes del indie argentino.',
-    date: '2026-07-18T21:00:00',
+    date: '2026-09-19', dates: ['2026-09-19'],
     venue: 'Club Ciudad de Buenos Aires',
     capacity: 5000, available: 800, category: 'nacional',
     image_url: '/events/nacional4.png', price: 12000, status: 'active',
@@ -73,7 +83,7 @@ const MOCK_EVENTS = [
     ID: 9,
     title: 'Divididos',
     description: 'Ricardo Mollo y Diego Arnedo vuelven a los escenarios con el clásico sonido de Divididos.',
-    date: '2026-11-01T21:00:00',
+    date: '2026-07-04', dates: ['2026-07-04'],
     venue: 'Estadio Obras, Buenos Aires',
     capacity: 8000, available: 1500, category: 'nacional',
     image_url: '/events/nacional5.png', price: 14000, status: 'active',
@@ -82,7 +92,7 @@ const MOCK_EVENTS = [
     ID: 10,
     title: 'Maldita Felicidad',
     description: 'La comedia protagonizada por Pablo Echarri, Paola Krum, Carlos Portaluppi e Inés Palombo.',
-    date: '2026-08-15T20:00:00',
+    date: '2026-06-28', dates: ['2026-06-28'],
     venue: 'Teatro Ciudad de las Artes, Córdoba',
     capacity: 1200, available: 340, category: 'teatro',
     image_url: '/events/teatro1.png', price: 9500, status: 'active',
@@ -91,7 +101,7 @@ const MOCK_EVENTS = [
     ID: 11,
     title: 'Fito Páez — Segunda Gran Fiesta ¡FA!',
     description: 'El rosarino regresa al Movistar Arena para una segunda noche de su show ¡FA!',
-    date: '2026-09-27T21:00:00',
+    date: '2026-07-07', dates: ['2026-07-07'],
     venue: 'Movistar Arena, Buenos Aires',
     capacity: 15000, available: 2100, category: 'nacional',
     image_url: '/events/teatro2.png', price: 25000, status: 'active',
@@ -100,7 +110,7 @@ const MOCK_EVENTS = [
     ID: 12,
     title: 'Madama Butterfly',
     description: "La ópera de Puccini en una producción de Juventus Lyrica con dirección de Ana D'Anna.",
-    date: '2026-06-13T20:00:00',
+    date: '2026-07-11', dates: ['2026-07-11', '2026-07-12', '2026-07-18', '2026-07-19'],
     venue: 'Teatro Avenida, Buenos Aires',
     capacity: 900, available: 220, category: 'teatro',
     image_url: '/events/teatro3.png', price: 11000, status: 'active',
@@ -108,8 +118,8 @@ const MOCK_EVENTS = [
   {
     ID: 13,
     title: 'Darío Orsi — Hasta las Manos',
-    description: 'El nuevo show de stand up del comediante Darío Orsi.',
-    date: '2026-08-08T21:00:00',
+    description: 'Stand up con Darío Orsi, el nuevo show del comediante argentino.',
+    date: '2026-09-05', dates: ['2026-09-05'],
     venue: 'Teatro Gran Rex, Buenos Aires',
     capacity: 1200, available: 380, category: 'standup',
     image_url: '/events/standUp1.png', price: 7500, status: 'active',
@@ -117,13 +127,16 @@ const MOCK_EVENTS = [
   {
     ID: 14,
     title: 'Manuel Ángel Redondo — Adulto Responsable',
-    description: 'Stand up & Crono Show en vivo en Córdoba.',
-    date: '2026-07-25T21:00:00',
+    description: 'Stand up & Crowd Work en vivo en Córdoba.',
+    date: '2026-08-30', dates: ['2026-08-30'],
     venue: 'Studio Theater, Córdoba',
     capacity: 500, available: 140, category: 'standup',
     image_url: '/events/standUp2.png', price: 6000, status: 'active',
   },
 ]
+
+// Hero: exactamente estos 3 eventos
+const HERO_IDS = [2, 3, 4]
 
 // Primeros 3 eventos para el carousel del hero
 const HERO_SLIDES = MOCK_EVENTS.slice(0, 3)
@@ -151,7 +164,9 @@ function HeroCarousel({ slides }) {
   const ev = slides[current]
   if (!ev) return null
 
-  const formatDate = (d) => new Date(d).toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' })
+  // Agrega T12:00:00 si es sólo fecha para evitar offset de zona horaria
+  const parseDate = (d) => new Date(d.length === 10 ? d + 'T12:00:00' : d)
+  const formatDate = (d) => parseDate(d).toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' })
 
   return (
     <div className={styles.hero}>
@@ -196,9 +211,18 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [searchText, setSearchText] = useState('')
   const [searchDate, setSearchDate] = useState('')
-  const [activeSearch, setActiveSearch] = useState({ text: '', date: '' })
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
+
+  // La búsqueda vive en la URL → cambiar la URL limpia todo
+  const qParam   = searchParams.get('q') || ''
+  const dateParam = searchParams.get('date') || ''
   const catFilter = searchParams.get('cat') || ''
+  const isSearching = qParam || dateParam
+
+  // Sincronizar inputs con params de URL
+  useEffect(() => { setSearchText(qParam) }, [qParam])
+  useEffect(() => { setSearchDate(dateParam) }, [dateParam])
 
   useEffect(() => {
     fetchEvents()
@@ -217,22 +241,24 @@ export default function Home() {
     }
   }
 
+  // Normaliza texto quitando acentos y pasando a minúsculas
+  const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
   const handleSearchText = (e) => {
     e.preventDefault()
-    setActiveSearch({ text: searchText, date: '' })
+    if (!searchText.trim()) { navigate('/'); return }
+    setSearchParams({ q: searchText.trim() })
   }
 
   const handleSearchDate = (e) => {
     e.preventDefault()
-    setActiveSearch({ text: '', date: searchDate })
+    if (!searchDate) { navigate('/'); return }
+    setSearchParams({ date: searchDate })
   }
 
-  const clearSearch = () => {
-    setSearchText(''); setSearchDate(''); setActiveSearch({ text: '', date: '' })
-  }
+  const clearSearch = () => navigate('/')
 
   // Filtrado
-  const isSearching = activeSearch.text || activeSearch.date
   let displayed = [...allEvents]
 
   if (catFilter) {
@@ -242,17 +268,28 @@ export default function Home() {
       displayed = displayed.filter(e => e.category === catFilter)
     }
   }
-  if (activeSearch.text) {
-    const q = activeSearch.text.toLowerCase()
-    displayed = displayed.filter(e =>
-      e.title.toLowerCase().includes(q) || (e.venue || '').toLowerCase().includes(q)
-    )
+  if (qParam) {
+    const q = norm(qParam)
+    // Etiquetas legibles por categoría — evita falsos positivos por venue o descripción
+    const CAT_SEARCH = {
+      internacional: 'musica internacional',
+      nacional:      'musica nacional',
+      teatro:        'teatro opera',
+      standup:       'stand up comedia',
+    }
+    displayed = displayed.filter(e => {
+      const catLabel = CAT_SEARCH[e.category] || ''
+      return norm(e.title).includes(q) || catLabel.includes(q)
+    })
   }
-  if (activeSearch.date) {
-    displayed = displayed.filter(e => new Date(e.date).toISOString().slice(0, 10) === activeSearch.date)
+  if (dateParam) {
+    displayed = displayed.filter(e => {
+      const allDates = e.dates || [e.date]
+      return allDates.some(d => d.slice(0, 10) === dateParam)
+    })
   }
 
-  const heroSlides = allEvents.slice(0, 3)
+  const heroSlides = allEvents.filter(e => HERO_IDS.includes(e.ID))
 
   const CAT_LABELS = { musica: 'Música', internacional: 'Internacionales', nacional: 'Nacionales', teatro: 'Teatro y ópera', standup: 'Stand up' }
 
@@ -263,7 +300,7 @@ export default function Home() {
   return (
     <div className={styles.page}>
 
-      {/* ── Hero carousel ── */}
+      {/* ── Hero carousel — solo cuando no hay búsqueda ni filtro ── */}
       {!isSearching && !catFilter && <HeroCarousel slides={heroSlides} />}
 
       {/* ── Buscador ── */}
@@ -319,7 +356,7 @@ export default function Home() {
             }
           </h2>
           {(isSearching || catFilter) && (
-            <Link to="/" className={styles.backLink} onClick={clearSearch}>Ver todos</Link>
+            <Link to="/" className={styles.backLink}>Ver todos</Link>
           )}
         </div>
 

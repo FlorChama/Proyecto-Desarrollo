@@ -96,6 +96,12 @@
   font-weight: 500;
 }
 
+.moreDates {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
 .venue {
   font-size: 0.78rem;
   color: #888;

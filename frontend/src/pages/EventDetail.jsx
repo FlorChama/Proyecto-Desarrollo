@@ -55,10 +55,16 @@ export default function EventDetail() {
           <h1 className={styles.title}>{event.title}</h1>
           <p className={styles.venue}>{event.venue}</p>
         </div>
-        <button onClick={() => navigate(-1)} className={styles.backBtn}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          Volver
-        </button>
+        <div className={styles.backBtns}>
+          <button onClick={() => navigate(-1)} className={styles.backBtn}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Volver
+          </button>
+          <button onClick={() => navigate('/')} className={styles.backBtn}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Inicio
+          </button>
+        </div>
       </div>
 
       {/* Cuerpo en fondo claro */}

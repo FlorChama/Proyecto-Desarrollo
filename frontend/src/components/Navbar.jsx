@@ -12,7 +12,7 @@ const CATEGORIES = [
       { label: 'Nacionales',      value: 'nacional' },
     ],
   },
-  { label: 'Teatro y ópera', value: 'teatro' },
+  { label: 'Teatro', value: 'teatro' },
   { label: 'Stand up',       value: 'standup' },
 ]
 
@@ -62,13 +62,16 @@ export default function Navbar() {
 
         {/* Dropdown Eventos */}
         <div className={styles.dropWrap} ref={dropRef}>
-          <button
-            className={`${styles.navLink} ${styles.dropTrigger} ${location.search.includes('cat=') || isActive('/') ? styles.active : ''}`}
-            onClick={() => setDropOpen(o => !o)}
-          >
-            Eventos
-            <svg className={`${styles.chevron} ${dropOpen ? styles.chevronUp : ''}`} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
+          <div className={`${styles.navLink} ${styles.dropTrigger} ${location.search.includes('cat=') || isActive('/') ? styles.active : ''}`}>
+            {/* Texto "Eventos" navega directo al home */}
+            <span className={styles.dropLabel} onClick={() => { setDropOpen(false); navigate('/') }}>
+              Eventos
+            </span>
+            {/* Chevron abre/cierra el dropdown */}
+            <button className={styles.chevronBtn} onClick={() => setDropOpen(o => !o)}>
+              <svg className={`${styles.chevron} ${dropOpen ? styles.chevronUp : ''}`} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </div>
 
           {dropOpen && (
             <div className={styles.dropdown}>
