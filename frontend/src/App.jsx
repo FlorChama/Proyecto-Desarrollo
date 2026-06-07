@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import MyTickets from './pages/MyTickets'
 import AdminPanel from './pages/AdminPanel'
+import Checkout from './pages/Checkout'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { isAuthenticated, isAdmin, loading } = useAuth()
@@ -25,6 +26,9 @@ function AppRoutes() {
         <Route path="/eventos/:id" element={<EventDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/checkout/:id" element={
+          <ProtectedRoute><Checkout /></ProtectedRoute>
+        } />
         <Route path="/mis-entradas" element={
           <ProtectedRoute><MyTickets /></ProtectedRoute>
         } />
