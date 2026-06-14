@@ -125,6 +125,21 @@
   letter-spacing: 0.5px;
 }
 
+/* Carrito */
+.cartBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  padding: 0.45rem 0.65rem;
+  border-radius: 7px;
+  transition: all 0.15s;
+}
+.cartBtn:hover { color: #fff; background: rgba(255,255,255,0.06); }
+
 /* Auth */
 .authSection { display: flex; align-items: center; margin-left: 0.5rem; }
 
