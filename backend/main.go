@@ -47,7 +47,7 @@ func initDB() *gorm.DB {
 		log.Fatalf("Error conectando a la base de datos: %v", err)
 	}
 
-	if err := db.AutoMigrate(&domain.User{}, &domain.Event{}, &domain.Ticket{}); err != nil {
+	if err := db.AutoMigrate(&domain.User{}, &domain.Event{}, &domain.Ticket{}, &domain.Payment{}); err != nil {
 		log.Fatalf("Error en migraciones: %v", err)
 	}
 
@@ -62,6 +62,7 @@ func main() {
 	userDAO := dao.NewUserDAO(db)
 	eventDAO := dao.NewEventDAO(db)
 	ticketDAO := dao.NewTicketDAO(db)
+	paymentDAO := dao.NewPaymentDAO(db)
 
 	// Clients
 	emailClient := clients.NewEmailClient()
@@ -69,7 +70,7 @@ func main() {
 	// Services
 	authService := services.NewAuthService(userDAO)
 	eventService := services.NewEventService(eventDAO)
-	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO, emailClient)
+	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO, paymentDAO, emailClient)
 
 	// Controllers
 	authCtrl := controllers.NewAuthController(authService)
@@ -113,6 +114,7 @@ func main() {
 		{
 			tickets.POST("", ticketCtrl.Buy)
 			tickets.GET("/my", ticketCtrl.GetMyTickets)
+			tickets.GET("/payments", ticketCtrl.GetMyPayments)
 			tickets.DELETE("/:id", ticketCtrl.Cancel)
 			tickets.POST("/:id/transfer", ticketCtrl.Transfer)
 		}

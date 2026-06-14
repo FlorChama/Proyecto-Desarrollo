@@ -22,8 +22,10 @@ export const getEvents = (params) => api.get('/events', { params })
 export const getEventById = (id) => api.get(`/events/${id}`)
 
 // Tickets
-export const buyTicket = (eventId) => api.post('/tickets', { event_id: eventId })
+export const buyTicket = (eventId, paymentMethod, amount, ticketType = 'general') =>
+  api.post('/tickets', { event_id: eventId, payment_method: paymentMethod, amount, ticket_type: ticketType })
 export const getMyTickets = () => api.get('/tickets/my')
+export const getMyPayments = () => api.get('/tickets/payments')
 export const cancelTicket = (id) => api.delete(`/tickets/${id}`)
 export const transferTicket = (id, targetEmail) => api.post(`/tickets/${id}/transfer`, { target_email: targetEmail })
 

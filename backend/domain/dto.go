@@ -51,6 +51,13 @@ type EventFilterRequest struct {
 }
 
 // Ticket
+type BuyTicketRequest struct {
+	EventID       uint    `json:"event_id" binding:"required"`
+	PaymentMethod string  `json:"payment_method" binding:"required"`
+	TicketType    string  `json:"ticket_type"`
+	Amount        float64 `json:"amount" binding:"required,min=0"`
+}
+
 type TransferRequest struct {
 	TargetEmail string `json:"target_email" binding:"required,email"`
 }

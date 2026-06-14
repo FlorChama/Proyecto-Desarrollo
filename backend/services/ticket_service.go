@@ -13,19 +13,21 @@ type TicketService struct {
 	ticketDAO   *dao.TicketDAO
 	eventDAO    *dao.EventDAO
 	userDAO     *dao.UserDAO
+	paymentDAO  *dao.PaymentDAO
 	emailClient *clients.EmailClient
 }
 
-func NewTicketService(ticketDAO *dao.TicketDAO, eventDAO *dao.EventDAO, userDAO *dao.UserDAO, emailClient *clients.EmailClient) *TicketService {
+func NewTicketService(ticketDAO *dao.TicketDAO, eventDAO *dao.EventDAO, userDAO *dao.UserDAO, paymentDAO *dao.PaymentDAO, emailClient *clients.EmailClient) *TicketService {
 	return &TicketService{
 		ticketDAO:   ticketDAO,
 		eventDAO:    eventDAO,
 		userDAO:     userDAO,
+		paymentDAO:  paymentDAO,
 		emailClient: emailClient,
 	}
 }
 
-func (s *TicketService) Buy(userID, eventID uint) (*domain.Ticket, error) {
+func (s *TicketService) Buy(userID, eventID uint, paymentMethod string, amount float64) (*domain.Ticket, error) {
 	event, err := s.eventDAO.FindByID(eventID)
 	if err != nil {
 		return nil, domain.ErrEventoNoEncontrado
@@ -69,6 +71,15 @@ func (s *TicketService) Buy(userID, eventID uint) (*domain.Ticket, error) {
 		return nil, errors.New("error actualizando disponibilidad")
 	}
 
+	payment := &domain.Payment{
+		TicketID: ticket.ID,
+		UserID:   userID,
+		Amount:   amount,
+		Method:   paymentMethod,
+		Status:   domain.PaymentStatusApproved,
+	}
+	_ = s.paymentDAO.Create(payment)
+
 	// Bonus: notificación por email
 	go s.emailClient.SendPurchaseConfirmation(user.Email, user.Name, event.Title, qrCode)
 
@@ -77,6 +88,10 @@ func (s *TicketService) Buy(userID, eventID uint) (*domain.Ticket, error) {
 
 func (s *TicketService) GetMyTickets(userID uint) ([]domain.Ticket, error) {
 	return s.ticketDAO.FindByUserID(userID)
+}
+
+func (s *TicketService) GetMyPayments(userID uint) ([]domain.Payment, error) {
+	return s.paymentDAO.FindByUserID(userID)
 }
 
 func (s *TicketService) Cancel(ticketID, userID uint) error {
