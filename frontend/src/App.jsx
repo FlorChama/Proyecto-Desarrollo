@@ -26,6 +26,7 @@ function AppRoutes() {
         <Route path="/eventos/:id" element={<EventDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/checkout" element={<Checkout />} />
         <Route path="/checkout/:id" element={
           <ProtectedRoute><Checkout /></ProtectedRoute>
         } />

@@ -27,10 +27,14 @@ const formatDateLabel = (d) => parseDate(d).toLocaleDateString('es-AR', { weekda
 const formatPrice = (n) => n?.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 })
 
 const PAYMENT_METHODS = [
-  { id: 'credit', label: 'Tarjeta de crédito', icon: '💳', type: 'card' },
-  { id: 'debit',  label: 'Tarjeta de débito',  icon: '💳', type: 'card' },
-  { id: 'modo',   label: 'MODO',               icon: null, img: '/payments/modo.png',        type: 'qr' },
-  { id: 'mp',     label: 'Mercado Pago',        icon: null, img: '/payments/mercadopago.png', type: 'qr' },
+  {
+    id: 'card',
+    label: 'Tarjeta Crédito/Débito',
+    type: 'card',
+    logos: ['/payments/visa.png', '/payments/mastercard.png', '/payments/amex.svg'],
+  },
+  { id: 'modo', label: 'MODO',         img: '/payments/modo.png',        type: 'qr' },
+  { id: 'mp',   label: 'Mercado Pago', img: '/payments/mercadopago.png', type: 'qr' },
 ]
 
 // QR placeholder geométrico (sin dependencia externa)
@@ -69,11 +73,33 @@ function FakeQR({ label }) {
   )
 }
 
+function EmptyCart({ navigate }) {
+  return (
+    <div className={styles.resultPage}>
+      <div className={styles.resultCard}>
+        <div className={styles.resultIcon} style={{ background: '#e5e7eb' }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+        </div>
+        <h1 className={styles.resultTitle}>Tu bolsa está vacía</h1>
+        <p className={styles.resultSub}>Todavía no seleccionaste ninguna entrada. Explorá los eventos disponibles y elegí el tuyo.</p>
+        <div className={styles.resultActions}>
+          <button onClick={() => navigate('/')} className={styles.btnPrimary}>Ver eventos</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Checkout() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated, user } = useAuth()
+
+  if (!id) return <EmptyCart navigate={navigate} />
 
   const stateData = location.state || {}
 
@@ -93,6 +119,7 @@ export default function Checkout() {
     telefono: '',
   })
   const [personalError, setPersonalError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState({})
 
   // Paso 2 — pago
   const [payMethod, setPayMethod] = useState('')
@@ -120,16 +147,19 @@ export default function Checkout() {
   const handleContinue = (e) => {
     e.preventDefault()
     const { nombre, apellido, dni, email, telefono } = personal
-    if (!nombre || !apellido || !dni || !email || !telefono) {
-      setPersonalError('Completá todos los campos para continuar.')
-      return
-    }
-    if (!/^\d{7,8}$/.test(dni)) {
-      setPersonalError('El DNI debe tener 7 u 8 dígitos.')
-      return
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setPersonalError('Ingresá un email válido.')
+    const errs = {}
+    if (!nombre.trim())  errs.nombre   = 'Campo requerido'
+    if (!apellido.trim()) errs.apellido = 'Campo requerido'
+    if (!dni)             errs.dni      = 'Campo requerido'
+    else if (!/^\d{7,8}$/.test(dni)) errs.dni = 'El DNI debe tener 7 u 8 dígitos'
+    if (!email)           errs.email    = 'Campo requerido'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Email inválido'
+    if (!telefono)        errs.telefono = 'Campo requerido'
+    else if (!/^\d{8,15}$/.test(telefono)) errs.telefono = 'El teléfono debe tener entre 8 y 15 dígitos'
+
+    setFieldErrors(errs)
+    if (Object.keys(errs).length > 0) {
+      setPersonalError('Revisá los campos marcados en rojo.')
       return
     }
     setPersonalError('')
@@ -150,7 +180,7 @@ export default function Checkout() {
     setPayError('')
     setBuying(true)
     try {
-      const methodMap = { credit: 'credit_card', debit: 'debit_card', modo: 'modo', mp: 'mercadopago' }
+      const methodMap = { card: 'credit_card', modo: 'modo', mp: 'mercadopago' }
       await buyTicket(Number(id), methodMap[payMethod] || payMethod, total, ticketType.id || 'general')
       setSuccess(true)
       setStep(3)
@@ -258,20 +288,22 @@ export default function Checkout() {
                   <input
                     type="text"
                     value={personal.nombre}
-                    onChange={e => setPersonal({ ...personal, nombre: e.target.value })}
+                    onChange={e => { setPersonal({ ...personal, nombre: e.target.value }); setFieldErrors(fe => ({...fe, nombre: ''})) }}
                     placeholder="Juan"
-                    required
+                    style={fieldErrors.nombre ? {borderColor:'#ef4444'} : {}}
                   />
+                  {fieldErrors.nombre && <span className={styles.fieldError}>{fieldErrors.nombre}</span>}
                 </div>
                 <div className={styles.field}>
                   <label>Apellido</label>
                   <input
                     type="text"
                     value={personal.apellido}
-                    onChange={e => setPersonal({ ...personal, apellido: e.target.value })}
+                    onChange={e => { setPersonal({ ...personal, apellido: e.target.value }); setFieldErrors(fe => ({...fe, apellido: ''})) }}
                     placeholder="Pérez"
-                    required
+                    style={fieldErrors.apellido ? {borderColor:'#ef4444'} : {}}
                   />
+                  {fieldErrors.apellido && <span className={styles.fieldError}>{fieldErrors.apellido}</span>}
                 </div>
               </div>
 
@@ -281,11 +313,12 @@ export default function Checkout() {
                   type="text"
                   inputMode="numeric"
                   value={personal.dni}
-                  onChange={e => setPersonal({ ...personal, dni: e.target.value.replace(/\D/g, '') })}
+                  onChange={e => { setPersonal({ ...personal, dni: e.target.value.replace(/\D/g, '') }); setFieldErrors(fe => ({...fe, dni: ''})) }}
                   placeholder="12345678"
                   maxLength={8}
-                  required
+                  style={fieldErrors.dni ? {borderColor:'#ef4444'} : {}}
                 />
+                {fieldErrors.dni && <span className={styles.fieldError}>{fieldErrors.dni}</span>}
               </div>
 
               <div className={styles.field}>
@@ -293,10 +326,11 @@ export default function Checkout() {
                 <input
                   type="email"
                   value={personal.email}
-                  onChange={e => setPersonal({ ...personal, email: e.target.value })}
+                  onChange={e => { setPersonal({ ...personal, email: e.target.value }); setFieldErrors(fe => ({...fe, email: ''})) }}
                   placeholder="tu@email.com"
-                  required
+                  style={fieldErrors.email ? {borderColor:'#ef4444'} : {}}
                 />
+                {fieldErrors.email && <span className={styles.fieldError}>{fieldErrors.email}</span>}
               </div>
 
               <div className={styles.field}>
@@ -304,10 +338,11 @@ export default function Checkout() {
                 <input
                   type="tel"
                   value={personal.telefono}
-                  onChange={e => setPersonal({ ...personal, telefono: e.target.value.replace(/\D/g, '') })}
+                  onChange={e => { setPersonal({ ...personal, telefono: e.target.value.replace(/\D/g, '') }); setFieldErrors(fe => ({...fe, telefono: ''})) }}
                   placeholder="1123456789"
-                  required
+                  style={fieldErrors.telefono ? {borderColor:'#ef4444'} : {}}
                 />
+                {fieldErrors.telefono && <span className={styles.fieldError}>{fieldErrors.telefono}</span>}
               </div>
 
               <button type="submit" className={styles.submitBtn}>Continuar</button>
@@ -334,9 +369,11 @@ export default function Checkout() {
                     className={`${styles.methodBtn} ${payMethod === m.id ? styles.methodSelected : ''}`}
                     onClick={() => setPayMethod(m.id)}
                   >
-                    {m.img
-                      ? <img src={m.img} alt={m.label} className={styles.methodImg} />
-                      : <span className={styles.methodIcon}>{m.icon}</span>
+                    {m.logos
+                      ? <div className={styles.cardLogos}>
+                          {m.logos.map(logo => <img key={logo} src={logo} alt="" className={styles.cardLogoImg} />)}
+                        </div>
+                      : <img src={m.img} alt={m.label} className={styles.methodImg} />
                     }
                     <span className={styles.methodLabel}>{m.label}</span>
                   </button>
