@@ -45,14 +45,14 @@ func TestReporteCuentaCanceladas(t *testing.T) {
 	c2, _ := registerUser(t, r, "C2", "c2@test.com", "secret123")
 
 	// Dos compras
-	w := doRequest(r, "POST", "/api/tickets", c1, map[string]uint{"event_id": eventID})
+	w := doRequest(r, "POST", "/api/tickets", c1, buyBody(eventID))
 	var b struct {
 		Data struct {
 			ID uint `json:"ID"`
 		} `json:"data"`
 	}
 	json.Unmarshal(w.Body.Bytes(), &b)
-	doRequest(r, "POST", "/api/tickets", c2, map[string]uint{"event_id": eventID})
+	doRequest(r, "POST", "/api/tickets", c2, buyBody(eventID))
 
 	// C1 cancela su entrada
 	doRequest(r, "DELETE", fmt.Sprintf("/api/tickets/%d", b.Data.ID), c1, nil)
@@ -84,7 +84,10 @@ func TestCasosBordeNegocio(t *testing.T) {
 	eventID := createEvent(t, r, adminToken, 5)
 
 	// Comprar evento inexistente -> 404
-	if w := doRequest(r, "POST", "/api/tickets", cToken, map[string]uint{"event_id": 99999}); w.Code != http.StatusNotFound {
+	badBuy := map[string]interface{}{
+		"event_id": uint(99999), "payment_method": "credit_card", "amount": 1000.0,
+	}
+	if w := doRequest(r, "POST", "/api/tickets", cToken, badBuy); w.Code != http.StatusNotFound {
 		t.Errorf("compra evento inexistente: esperado 404, obtenido %d", w.Code)
 	}
 
@@ -108,8 +111,11 @@ func TestCasosBordeNegocio(t *testing.T) {
 		t.Errorf("cancelar evento inexistente: esperado 404, obtenido %d", w.Code)
 	}
 
-	// Compramos un ticket con Cli para probar errores de tickets
-	w := doRequest(r, "POST", "/api/tickets", cToken, map[string]uint{"event_id": eventID})
+	// Comprar ticket válido para probar errores de tickets
+	w := doRequest(r, "POST", "/api/tickets", cToken, buyBody(eventID))
+	if w.Code != http.StatusCreated {
+		t.Fatalf("compra para tests: esperado 201, obtenido %d (%s)", w.Code, w.Body.String())
+	}
 	var buy struct {
 		Data struct {
 			ID uint `json:"ID"`
@@ -118,7 +124,7 @@ func TestCasosBordeNegocio(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &buy)
 	tid := buy.Data.ID
 
-	// Cli2 intenta cancelar la entrada de Cli -> 403 (no es el dueño)
+	// Cli2 intenta cancelar la entrada de Cli -> 403
 	if w := doRequest(r, "DELETE", fmt.Sprintf("/api/tickets/%d", tid), c2Token, nil); w.Code != http.StatusForbidden {
 		t.Errorf("cancelar entrada ajena: esperado 403, obtenido %d", w.Code)
 	}
@@ -129,16 +135,17 @@ func TestCasosBordeNegocio(t *testing.T) {
 		t.Errorf("transferir a uno mismo: esperado 400, obtenido %d", w.Code)
 	}
 
-	// Transferir a email inexistente -> 404 (usuario destino no encontrado)
+	// Transferir a email inexistente -> 404
 	if w := doRequest(r, "POST", fmt.Sprintf("/api/tickets/%d/transfer", tid), cToken,
 		map[string]string{"target_email": "noexiste@test.com"}); w.Code != http.StatusNotFound {
 		t.Errorf("transferir a inexistente: esperado 404, obtenido %d", w.Code)
 	}
 
-	// Cancelar OK y luego intentar cancelar de nuevo -> 400
+	// Cancelar OK
 	if w := doRequest(r, "DELETE", fmt.Sprintf("/api/tickets/%d", tid), cToken, nil); w.Code != http.StatusOK {
 		t.Errorf("cancelar entrada propia: esperado 200, obtenido %d", w.Code)
 	}
+	// Cancelar de nuevo -> 400 (ya cancelada)
 	if w := doRequest(r, "DELETE", fmt.Sprintf("/api/tickets/%d", tid), cToken, nil); w.Code != http.StatusBadRequest {
 		t.Errorf("cancelar dos veces: esperado 400, obtenido %d", w.Code)
 	}

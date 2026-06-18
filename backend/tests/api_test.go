@@ -30,6 +30,16 @@ func doRequest(r *gin.Engine, method, path, token string, body interface{}) *htt
 	return w
 }
 
+// buyBody devuelve un body válido para comprar una entrada.
+func buyBody(eventID uint) map[string]interface{} {
+	return map[string]interface{}{
+		"event_id":       eventID,
+		"payment_method": "credit_card",
+		"amount":         1000.0,
+		"ticket_type":    "general",
+	}
+}
+
 // registerUser registra un cliente y devuelve su token e ID.
 func registerUser(t *testing.T, r *gin.Engine, name, email, pass string) (string, uint) {
 	t.Helper()
@@ -62,7 +72,7 @@ func createEvent(t *testing.T, r *gin.Engine, adminToken string, capacity int) u
 		"venue":    "Estadio Test",
 		"capacity": capacity,
 		"price":    1000.0,
-		"category": "Música",
+		"category": "nacional",
 	}
 	w := doRequest(r, "POST", "/api/admin/events", adminToken, body)
 	if w.Code != http.StatusCreated {
@@ -138,7 +148,7 @@ func TestEventosPublicos(t *testing.T) {
 	}
 
 	// Filtro por categoría -> 200
-	w = doRequest(r, "GET", "/api/events?category=Música", "", nil)
+	w = doRequest(r, "GET", "/api/events?category=nacional", "", nil)
 	if w.Code != http.StatusOK {
 		t.Errorf("filtro categoría: esperado 200, obtenido %d", w.Code)
 	}
@@ -184,25 +194,25 @@ func TestPermisosAdmin(t *testing.T) {
 	}
 }
 
-// ---- Flujo completo: compra, QR, mis entradas, cancelar, traspaso ----
+// ---- Flujo completo: compra, QR, mis entradas, traspaso ----
 
 func TestCompraCancelacionYTraspaso(t *testing.T) {
 	db := setupTestDB(t)
 	r := setupTestServer(db)
 
 	adminToken, _ := createAdmin(t, db)
-	eventID := createEvent(t, r, adminToken, 2)
+	eventID := createEvent(t, r, adminToken, 5)
 
 	c1Token, _ := registerUser(t, r, "Cli1", "cli1@test.com", "secret123")
 	c2Token, c2ID := registerUser(t, r, "Cli2", "cli2@test.com", "secret123")
 
 	// Comprar sin token -> 401
-	if w := doRequest(r, "POST", "/api/tickets", "", map[string]uint{"event_id": eventID}); w.Code != http.StatusUnauthorized {
+	if w := doRequest(r, "POST", "/api/tickets", "", buyBody(eventID)); w.Code != http.StatusUnauthorized {
 		t.Errorf("compra sin token: esperado 401, obtenido %d", w.Code)
 	}
 
-	// Comprar con token -> 201 y genera QR (Bonus)
-	w := doRequest(r, "POST", "/api/tickets", c1Token, map[string]uint{"event_id": eventID})
+	// Comprar con token -> 201 y genera QR
+	w := doRequest(r, "POST", "/api/tickets", c1Token, buyBody(eventID))
 	if w.Code != http.StatusCreated {
 		t.Fatalf("compra: esperado 201, obtenido %d (%s)", w.Code, w.Body.String())
 	}
@@ -210,12 +220,11 @@ func TestCompraCancelacionYTraspaso(t *testing.T) {
 		Data struct {
 			ID     uint   `json:"ID"`
 			QRCode string `json:"qr_code"`
-			Status string `json:"status"`
 		} `json:"data"`
 	}
 	json.Unmarshal(w.Body.Bytes(), &buyResp)
 	if buyResp.Data.QRCode == "" {
-		t.Error("la compra debe generar un código QR (Bonus)")
+		t.Error("la compra debe generar un código QR")
 	}
 	ticketID := buyResp.Data.ID
 	originalQR := buyResp.Data.QRCode
@@ -235,7 +244,7 @@ func TestCompraCancelacionYTraspaso(t *testing.T) {
 		t.Errorf("mis entradas: esperado 1 ticket, obtenido %d", len(myResp.Data))
 	}
 
-	// Traspasar a Cli2 -> 200 y genera QR nuevo (Bonus)
+	// Traspasar a Cli2 -> 200 con QR nuevo y user_id de Cli2
 	w = doRequest(r, "POST", fmt.Sprintf("/api/tickets/%d/transfer", ticketID), c1Token,
 		map[string]string{"target_email": "cli2@test.com"})
 	if w.Code != http.StatusOK {
@@ -243,6 +252,7 @@ func TestCompraCancelacionYTraspaso(t *testing.T) {
 	}
 	var transferResp struct {
 		Data struct {
+			ID     uint   `json:"ID"`
 			QRCode string `json:"qr_code"`
 			UserID uint   `json:"user_id"`
 		} `json:"data"`
@@ -252,20 +262,21 @@ func TestCompraCancelacionYTraspaso(t *testing.T) {
 		t.Errorf("traspaso: el ticket debe pertenecer a Cli2 (%d), pertenece a %d", c2ID, transferResp.Data.UserID)
 	}
 	if transferResp.Data.QRCode == originalQR {
-		t.Error("el traspaso debe generar un QR nuevo, distinto al anterior (Bonus)")
+		t.Error("el traspaso debe generar un QR nuevo distinto al anterior")
 	}
 
-	// Ahora el ticket aparece en las entradas de Cli2
+	// El nuevo ticket de Cli2 aparece en sus entradas
 	w = doRequest(r, "GET", "/api/tickets/my", c2Token, nil)
 	json.Unmarshal(w.Body.Bytes(), &myResp)
 	if len(myResp.Data) != 1 {
 		t.Errorf("entradas de Cli2 tras traspaso: esperado 1, obtenido %d", len(myResp.Data))
 	}
 
-	// Cli2 cancela su entrada -> 200
-	w = doRequest(r, "DELETE", fmt.Sprintf("/api/tickets/%d", ticketID), c2Token, nil)
+	// Cli2 cancela su nueva entrada -> 200
+	newTicketID := transferResp.Data.ID
+	w = doRequest(r, "DELETE", fmt.Sprintf("/api/tickets/%d", newTicketID), c2Token, nil)
 	if w.Code != http.StatusOK {
-		t.Errorf("cancelación: esperado 200, obtenido %d", w.Code)
+		t.Errorf("cancelación: esperado 200, obtenido %d (%s)", w.Code, w.Body.String())
 	}
 }
 
@@ -276,17 +287,17 @@ func TestCompraSinStock(t *testing.T) {
 	r := setupTestServer(db)
 
 	adminToken, _ := createAdmin(t, db)
-	eventID := createEvent(t, r, adminToken, 1) // capacidad 1
+	eventID := createEvent(t, r, adminToken, 1)
 
 	c1Token, _ := registerUser(t, r, "Cli1", "cli1@test.com", "secret123")
 	c2Token, _ := registerUser(t, r, "Cli2", "cli2@test.com", "secret123")
 
 	// Primera compra OK
-	if w := doRequest(r, "POST", "/api/tickets", c1Token, map[string]uint{"event_id": eventID}); w.Code != http.StatusCreated {
+	if w := doRequest(r, "POST", "/api/tickets", c1Token, buyBody(eventID)); w.Code != http.StatusCreated {
 		t.Fatalf("primera compra: esperado 201, obtenido %d", w.Code)
 	}
 	// Segunda compra sin stock -> 400
-	if w := doRequest(r, "POST", "/api/tickets", c2Token, map[string]uint{"event_id": eventID}); w.Code != http.StatusBadRequest {
+	if w := doRequest(r, "POST", "/api/tickets", c2Token, buyBody(eventID)); w.Code != http.StatusBadRequest {
 		t.Errorf("compra sin stock: esperado 400, obtenido %d", w.Code)
 	}
 }
@@ -309,7 +320,7 @@ func TestActualizarEventoYReporte(t *testing.T) {
 
 	// Una compra para que el reporte tenga datos
 	cToken, _ := registerUser(t, r, "Cli", "cli@test.com", "secret123")
-	doRequest(r, "POST", "/api/tickets", cToken, map[string]uint{"event_id": eventID})
+	doRequest(r, "POST", "/api/tickets", cToken, buyBody(eventID))
 
 	// Reporte -> 200
 	w = doRequest(r, "GET", fmt.Sprintf("/api/admin/events/%d/report", eventID), adminToken, nil)
@@ -331,5 +342,168 @@ func TestActualizarEventoYReporte(t *testing.T) {
 	w = doRequest(r, "DELETE", fmt.Sprintf("/api/admin/events/%d", eventID), adminToken, nil)
 	if w.Code != http.StatusOK {
 		t.Errorf("cancelar evento: esperado 200, obtenido %d", w.Code)
+	}
+}
+
+// ---- Reset y cambio de contraseña ----
+
+func TestResetPassword(t *testing.T) {
+	db := setupTestDB(t)
+	r := setupTestServer(db)
+
+	// Registrar usuario
+	doRequest(r, "POST", "/api/auth/register", "", map[string]string{
+		"name": "User", "email": "user@test.com", "password": "original123",
+	})
+
+	// Reset con email inexistente -> 400
+	w := doRequest(r, "POST", "/api/auth/reset-password", "", map[string]string{
+		"email": "noexiste@test.com", "new_password": "nueva123",
+	})
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("reset email inexistente: esperado 400, obtenido %d", w.Code)
+	}
+
+	// Reset OK -> 200
+	w = doRequest(r, "POST", "/api/auth/reset-password", "", map[string]string{
+		"email": "user@test.com", "new_password": "nueva123",
+	})
+	if w.Code != http.StatusOK {
+		t.Errorf("reset OK: esperado 200, obtenido %d (%s)", w.Code, w.Body.String())
+	}
+
+	// Login con nueva contraseña -> 200
+	w = doRequest(r, "POST", "/api/auth/login", "", map[string]string{
+		"email": "user@test.com", "password": "nueva123",
+	})
+	if w.Code != http.StatusOK {
+		t.Errorf("login post-reset: esperado 200, obtenido %d", w.Code)
+	}
+}
+
+func TestChangePassword(t *testing.T) {
+	db := setupTestDB(t)
+	r := setupTestServer(db)
+
+	token, _ := registerUser(t, r, "User", "user@test.com", "original123")
+
+	// Sin token -> 401
+	w := doRequest(r, "PUT", "/api/auth/change-password", "", map[string]string{
+		"current_password": "original123", "new_password": "nueva123",
+	})
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("change sin token: esperado 401, obtenido %d", w.Code)
+	}
+
+	// Contraseña actual incorrecta -> 400
+	w = doRequest(r, "PUT", "/api/auth/change-password", token, map[string]string{
+		"current_password": "incorrecta", "new_password": "nueva123",
+	})
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("change contraseña incorrecta: esperado 400, obtenido %d", w.Code)
+	}
+
+	// Cambio OK -> 200
+	w = doRequest(r, "PUT", "/api/auth/change-password", token, map[string]string{
+		"current_password": "original123", "new_password": "nueva123",
+	})
+	if w.Code != http.StatusOK {
+		t.Errorf("change OK: esperado 200, obtenido %d (%s)", w.Code, w.Body.String())
+	}
+
+	// Login con nueva contraseña -> 200
+	w = doRequest(r, "POST", "/api/auth/login", "", map[string]string{
+		"email": "user@test.com", "password": "nueva123",
+	})
+	if w.Code != http.StatusOK {
+		t.Errorf("login post-change: esperado 200, obtenido %d", w.Code)
+	}
+}
+
+// ---- Admin: listado completo y pagos ----
+
+func TestGetAllAdminYPagos(t *testing.T) {
+	db := setupTestDB(t)
+	r := setupTestServer(db)
+
+	adminToken, _ := createAdmin(t, db)
+	createEvent(t, r, adminToken, 10)
+
+	// Listado admin -> 200
+	w := doRequest(r, "GET", "/api/admin/events", adminToken, nil)
+	if w.Code != http.StatusOK {
+		t.Errorf("listado admin: esperado 200, obtenido %d", w.Code)
+	}
+
+	// Listado admin sin token -> 401
+	if w := doRequest(r, "GET", "/api/admin/events", "", nil); w.Code != http.StatusUnauthorized {
+		t.Errorf("listado admin sin token: esperado 401, obtenido %d", w.Code)
+	}
+
+	// Mis pagos -> 200
+	cToken, _ := registerUser(t, r, "Cli", "cli@test.com", "secret123")
+	eventID := createEvent(t, r, adminToken, 5)
+	doRequest(r, "POST", "/api/tickets", cToken, buyBody(eventID))
+
+	w = doRequest(r, "GET", "/api/tickets/payments", cToken, nil)
+	if w.Code != http.StatusOK {
+		t.Errorf("mis pagos: esperado 200, obtenido %d", w.Code)
+	}
+}
+
+// ---- Cobertura adicional: errores de binding y filtros ----
+
+func TestCoberturaAdicional(t *testing.T) {
+	db := setupTestDB(t)
+	r := setupTestServer(db)
+	adminToken, _ := createAdmin(t, db)
+	cToken, _ := registerUser(t, r, "Cli", "cli@test.com", "secret123")
+	eventID := createEvent(t, r, adminToken, 10)
+
+	// GetAll con filtro available -> 200
+	if w := doRequest(r, "GET", "/api/events?available=true", "", nil); w.Code != http.StatusOK {
+		t.Errorf("filtro available: esperado 200, obtenido %d", w.Code)
+	}
+
+	// GetAll con búsqueda -> 200
+	if w := doRequest(r, "GET", "/api/events?search=Recital", "", nil); w.Code != http.StatusOK {
+		t.Errorf("búsqueda: esperado 200, obtenido %d", w.Code)
+	}
+
+	// Create sin campos obligatorios -> 400
+	if w := doRequest(r, "POST", "/api/admin/events", adminToken, map[string]string{"title": "X"}); w.Code != http.StatusBadRequest {
+		t.Errorf("create sin campos: esperado 400, obtenido %d", w.Code)
+	}
+
+	// GetMyTickets sin token -> 401
+	if w := doRequest(r, "GET", "/api/tickets/my", "", nil); w.Code != http.StatusUnauthorized {
+		t.Errorf("mis entradas sin token: esperado 401, obtenido %d", w.Code)
+	}
+
+	// GetMyPayments sin token -> 401
+	if w := doRequest(r, "GET", "/api/tickets/payments", "", nil); w.Code != http.StatusUnauthorized {
+		t.Errorf("mis pagos sin token: esperado 401, obtenido %d", w.Code)
+	}
+
+	// GetMyTickets con token -> 200
+	if w := doRequest(r, "GET", "/api/tickets/my", cToken, nil); w.Code != http.StatusOK {
+		t.Errorf("mis entradas con token: esperado 200, obtenido %d", w.Code)
+	}
+
+	// Update con campo inválido de capacity (negativo es ignorado, igual retorna 200)
+	if w := doRequest(r, "PUT", fmt.Sprintf("/api/admin/events/%d", eventID), adminToken,
+		map[string]interface{}{"capacity": 20, "vip_price": 500.0}); w.Code != http.StatusOK {
+		t.Errorf("update capacity+vip: esperado 200, obtenido %d", w.Code)
+	}
+
+	// Update con fecha
+	if w := doRequest(r, "PUT", fmt.Sprintf("/api/admin/events/%d", eventID), adminToken,
+		map[string]interface{}{"description": "nueva desc", "venue": "nuevo venue", "category": "internacional", "extra_dates": "2026-12-25"}); w.Code != http.StatusOK {
+		t.Errorf("update campos adicionales: esperado 200, obtenido %d", w.Code)
+	}
+
+	// GetAllAdmin con token cliente -> 403
+	if w := doRequest(r, "GET", "/api/admin/events", cToken, nil); w.Code != http.StatusForbidden {
+		t.Errorf("admin events con cliente: esperado 403, obtenido %d", w.Code)
 	}
 }

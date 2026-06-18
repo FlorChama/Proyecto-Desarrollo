@@ -1,8 +1,6 @@
 package tests
 
 import (
-	"fmt"
-	"os"
 	"testing"
 
 	"ticketek-backend/clients"
@@ -14,48 +12,22 @@ import (
 	"ticketek-backend/utils"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-// getenv devuelve la variable de entorno o un valor por defecto.
-func getenv(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
-}
-
-// setupTestDB conecta a una base de datos MySQL de test (separada de la real),
-// la crea si no existe y deja las tablas limpias en cada test.
-// Si no hay MySQL disponible, el test se saltea (Skip) para no fallar el build.
+// setupTestDB crea una base de datos SQLite en archivo temporal, aislada por test.
 func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
-	host := getenv("TEST_DB_HOST", "127.0.0.1")
-	port := getenv("TEST_DB_PORT", "3306")
-	user := getenv("TEST_DB_USER", "root")
-	pass := getenv("TEST_DB_PASS", "root")
-	name := getenv("TEST_DB_NAME", "ticketek_test")
+	dir := t.TempDir()
+	dbPath := dir + "/test.db"
 
-	// Conexión sin base para poder crear la base de test.
-	rootDSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/?charset=utf8mb4&parseTime=True&loc=Local", user, pass, host, port)
-	rootDB, err := gorm.Open(mysql.Open(rootDSN), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
-		t.Skipf("MySQL no disponible para tests de integración: %v", err)
-	}
-	if err := rootDB.Exec("CREATE DATABASE IF NOT EXISTS " + name).Error; err != nil {
-		t.Skipf("no se pudo crear la base de test: %v", err)
+		t.Fatalf("error abriendo SQLite: %v", err)
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, pass, host, port, name)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		t.Skipf("no se pudo conectar a la base de test: %v", err)
-	}
-
-	// Tablas frescas para aislar cada test.
-	_ = db.Migrator().DropTable(&domain.Payment{}, &domain.Ticket{}, &domain.Event{}, &domain.User{})
 	if err := db.AutoMigrate(&domain.User{}, &domain.Event{}, &domain.Ticket{}, &domain.Payment{}); err != nil {
 		t.Fatalf("error en migraciones de test: %v", err)
 	}
@@ -88,6 +60,8 @@ func setupTestServer(db *gorm.DB) *gin.Engine {
 		{
 			auth.POST("/register", authCtrl.Register)
 			auth.POST("/login", authCtrl.Login)
+			auth.POST("/reset-password", authCtrl.ResetPassword)
+			auth.PUT("/change-password", middleware.AuthRequired(), authCtrl.ChangePassword)
 		}
 
 		events := api.Group("/events")
@@ -105,9 +79,12 @@ func setupTestServer(db *gorm.DB) *gin.Engine {
 			tickets.POST("/:id/transfer", ticketCtrl.Transfer)
 		}
 
+		tickets.GET("/payments", ticketCtrl.GetMyPayments)
+
 		admin := api.Group("/admin")
 		admin.Use(middleware.AuthRequired(), middleware.AdminRequired())
 		{
+			admin.GET("/events", eventCtrl.GetAllAdmin)
 			admin.POST("/events", eventCtrl.Create)
 			admin.PUT("/events/:id", eventCtrl.Update)
 			admin.DELETE("/events/:id", eventCtrl.Cancel)

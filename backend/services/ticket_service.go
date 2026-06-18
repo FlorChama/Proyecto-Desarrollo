@@ -140,7 +140,7 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 
 	targetUser, err := s.userDAO.FindByEmail(req.TargetEmail)
 	if err != nil {
-		return nil, errors.New("no existe ningún usuario registrado con ese email")
+		return nil, domain.ErrUsuarioNoEncontrado
 	}
 	if targetUser.ID == ownerID {
 		return nil, errors.New("no podés traspasar la entrada a vos mismo")
