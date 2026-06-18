@@ -43,7 +43,7 @@ TicketHub permite explorar eventos, comprar entradas, cancelarlas y traspasarlas
 
 ## Instalación y Uso
 
-### Opción 1 — Docker Compose (recomendado)
+### Opción 1 — Docker Compose (utilizado)
 
 ```bash
 git clone <url-del-repo>
@@ -51,9 +51,6 @@ cd PROYECTO\ DESARROLLO
 cp backend/.env.example backend/.env   
 docker-compose up --build
 ```
-
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8080
 
 ### Opción 2 — Local
 
@@ -76,8 +73,6 @@ cd frontend
 npm install
 npm run dev
 ```
-
-Frontend disponible en http://localhost:5173
 
 ### Ejecutar tests
 
@@ -104,10 +99,6 @@ El sistema maneja dos roles: **Cliente** y **Administrador**.
 - Cualquiera puede **registrarse** desde la pantalla de registro (queda con rol *cliente*).
 - El **primer administrador** se crea registrando un usuario y luego promoviéndolo en la base de datos:
 
-```sql
-UPDATE users SET role = 'admin' WHERE email = 'admin@demo.com';
-```
-
 Credenciales de demostración sugeridas:
 
 | Rol | Email | Password |
@@ -115,70 +106,6 @@ Credenciales de demostración sugeridas:
 | Administrador | `admin@demo.com` | `admin123` |
 | Cliente | `cliente@demo.com` | `cliente123` |
 
-## Diagrama de Base de Datos
-
-> Fuente del diagrama en [`docs/diagrama-bd.md`](docs/diagrama-bd.md).
-
-```mermaid
-erDiagram
-    USER ||--o{ TICKET : "compra"
-    EVENT ||--o{ TICKET : "tiene"
-    TICKET ||--|| PAYMENT : "genera"
-    USER ||--o{ PAYMENT : "realiza"
-
-    USER {
-        uint id PK
-        string name
-        string email "único"
-        string password "hash SHA-256"
-        string role "client | admin"
-    }
-    EVENT {
-        uint id PK
-        string title
-        datetime date
-        string venue
-        int capacity
-        int available
-        float price
-        float vip_price
-        string status "active | cancelled"
-    }
-    TICKET {
-        uint id PK
-        uint user_id FK
-        uint event_id FK
-        string status "active | cancelled | transferred"
-        string ticket_type "general | vip"
-        float price
-        string qr_code "QR base64"
-    }
-    PAYMENT {
-        uint id PK
-        uint ticket_id FK
-        uint user_id FK
-        float amount
-        string method
-        string status "approved | pending | failed"
-    }
-```
-
-## Endpoints de la API
-
-| Método | Ruta | Auth | Descripción |
-|--------|------|------|-------------|
-| POST | /api/auth/register | No | Registro de usuario |
-| POST | /api/auth/login | No | Login, retorna JWT |
-| GET | /api/events | No | Listar eventos (filtros: search, category, available) |
-| GET | /api/events/:id | No | Detalle de evento |
-| POST | /api/tickets | Cliente | Comprar entrada |
-| GET | /api/tickets/my | Cliente | Mis entradas |
-| DELETE | /api/tickets/:id | Cliente | Cancelar entrada |
-| POST | /api/tickets/:id/transfer | Cliente | Traspasar entrada |
-| POST | /api/admin/events | Admin | Crear evento |
-| PUT | /api/admin/events/:id | Admin | Editar evento |
-| DELETE | /api/admin/events/:id | Admin | Cancelar evento |
-| GET | /api/admin/events/:id/report | Admin | Reporte de ocupación |
 
 ## Decisiones de Diseño
 
