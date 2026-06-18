@@ -1,10 +1,10 @@
-# 🎫 TicketHub — Sistema de Gestión de Eventos y Entradas
+# TicketHub — Sistema de Gestión de Eventos y Entradas
 
 Sistema tipo Ticketek desarrollado como Práctico Integrador 2026 — Desarrollo de Software, Facultad de Ingeniería UCC.
 
 ## Descripción
 
-TicketHub permite explorar eventos, comprar entradas, cancelarlas y traspasar su titularidad a otros usuarios. Los administradores pueden crear y gestionar eventos y ver métricas de ocupación.
+TicketHub permite explorar eventos, comprar entradas, cancelarlas y traspasarlas a otros usuarios. Los administradores pueden crear y gestionar eventos y ver las metricas de cada evento.
 
 ## Capturas de Pantalla
 
@@ -48,7 +48,7 @@ TicketHub permite explorar eventos, comprar entradas, cancelarlas y traspasar su
 ```bash
 git clone <url-del-repo>
 cd PROYECTO\ DESARROLLO
-cp backend/.env.example backend/.env   # configurá las variables
+cp backend/.env.example backend/.env   
 docker-compose up --build
 ```
 
@@ -65,7 +65,7 @@ CREATE DATABASE ticketek_db;
 #### Backend
 ```bash
 cd backend
-cp .env.example .env       # editá con tus datos
+cp .env.example .env      
 go mod tidy
 go run main.go
 ```
@@ -112,10 +112,8 @@ Credenciales de demostración sugeridas:
 
 | Rol | Email | Password |
 |-----|-------|----------|
-| 🛡️ Administrador | `admin@demo.com` | `admin123` |
-| 🙋 Cliente | `cliente@demo.com` | `cliente123` |
-
-> Estas cuentas no vienen cargadas: se crean registrándolas y (para el admin) ejecutando el `UPDATE` de arriba.
+| Administrador | `admin@demo.com` | `admin123` |
+| Cliente | `cliente@demo.com` | `cliente123` |
 
 ## Diagrama de Base de Datos
 
