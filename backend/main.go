@@ -79,6 +79,7 @@ func main() {
 
 	// Router
 	r := gin.Default()
+	r.Static("/uploads", "./uploads")
 
 	// CORS
 	r.Use(func(c *gin.Context) {
@@ -123,6 +124,7 @@ func main() {
 		admin := api.Group("/admin")
 		admin.Use(middleware.AuthRequired(), middleware.AdminRequired())
 		{
+			admin.POST("/events/upload", eventCtrl.UploadImage)
 			admin.POST("/events", eventCtrl.Create)
 			admin.PUT("/events/:id", eventCtrl.Update)
 			admin.DELETE("/events/:id", eventCtrl.Cancel)

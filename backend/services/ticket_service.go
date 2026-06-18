@@ -27,7 +27,7 @@ func NewTicketService(ticketDAO *dao.TicketDAO, eventDAO *dao.EventDAO, userDAO 
 	}
 }
 
-func (s *TicketService) Buy(userID, eventID uint, paymentMethod string, amount float64) (*domain.Ticket, error) {
+func (s *TicketService) Buy(userID, eventID uint, paymentMethod, ticketType string, amount float64) (*domain.Ticket, error) {
 	event, err := s.eventDAO.FindByID(eventID)
 	if err != nil {
 		return nil, domain.ErrEventoNoEncontrado
@@ -44,11 +44,17 @@ func (s *TicketService) Buy(userID, eventID uint, paymentMethod string, amount f
 		return nil, domain.ErrUsuarioNoEncontrado
 	}
 
+	if ticketType == "" {
+		ticketType = "general"
+	}
+	pricePerTicket := amount
 	ticket := &domain.Ticket{
-		UserID:  userID,
-		EventID: eventID,
-		Status:  domain.TicketStatusActive,
-		QRCode:  "",
+		UserID:     userID,
+		EventID:    eventID,
+		Status:     domain.TicketStatusActive,
+		QRCode:     "",
+		TicketType: ticketType,
+		Price:      pricePerTicket,
 	}
 
 	if err := s.ticketDAO.Create(ticket); err != nil {
@@ -134,7 +140,7 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 
 	targetUser, err := s.userDAO.FindByEmail(req.TargetEmail)
 	if err != nil {
-		return nil, domain.ErrUsuarioNoEncontrado
+		return nil, errors.New("no existe ningún usuario registrado con ese email")
 	}
 	if targetUser.ID == ownerID {
 		return nil, errors.New("no podés traspasar la entrada a vos mismo")

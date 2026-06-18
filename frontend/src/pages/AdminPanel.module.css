@@ -131,7 +131,8 @@
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.75);
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -140,7 +141,7 @@
 }
 
 .modal {
-  background: var(--card-bg);
+  background: #1a1a1a;
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 2rem;
@@ -312,4 +313,71 @@
   border-radius: 8px;
   font-weight: 600;
   align-self: flex-end;
+}
+
+/* Image upload */
+.imageUploadArea {
+  position: relative;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  overflow: hidden;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s;
+}
+
+.imageUploadArea:hover {
+  border-color: var(--accent);
+}
+
+.imagePreview {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.imagePlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  padding: 2rem;
+}
+
+.imagePlaceholder span {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.imagePlaceholder p {
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.uploadingOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: white;
+  font-weight: 600;
+}
+
+.removeImageBtn {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--error);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
 }

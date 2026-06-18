@@ -55,8 +55,8 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	}
 
 	// Tablas frescas para aislar cada test.
-	_ = db.Migrator().DropTable(&domain.Ticket{}, &domain.Event{}, &domain.User{})
-	if err := db.AutoMigrate(&domain.User{}, &domain.Event{}, &domain.Ticket{}); err != nil {
+	_ = db.Migrator().DropTable(&domain.Payment{}, &domain.Ticket{}, &domain.Event{}, &domain.User{})
+	if err := db.AutoMigrate(&domain.User{}, &domain.Event{}, &domain.Ticket{}, &domain.Payment{}); err != nil {
 		t.Fatalf("error en migraciones de test: %v", err)
 	}
 	return db
@@ -70,11 +70,12 @@ func setupTestServer(db *gorm.DB) *gin.Engine {
 	userDAO := dao.NewUserDAO(db)
 	eventDAO := dao.NewEventDAO(db)
 	ticketDAO := dao.NewTicketDAO(db)
+	paymentDAO := dao.NewPaymentDAO(db)
 	emailClient := clients.NewEmailClient() // SMTP vacío: el envío falla en segundo plano, no rompe los tests
 
 	authService := services.NewAuthService(userDAO)
 	eventService := services.NewEventService(eventDAO)
-	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO, emailClient)
+	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO, paymentDAO, emailClient)
 
 	authCtrl := controllers.NewAuthController(authService)
 	eventCtrl := controllers.NewEventController(eventService)

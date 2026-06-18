@@ -31,6 +31,7 @@ type CreateEventRequest struct {
 	Category    string    `json:"category"`
 	ImageURL    string    `json:"image_url"`
 	Price       float64   `json:"price" binding:"required,min=0"`
+	VIPPrice    float64   `json:"vip_price"`
 }
 
 type UpdateEventRequest struct {
@@ -44,6 +45,7 @@ type UpdateEventRequest struct {
 	Category    string    `json:"category"`
 	ImageURL    string    `json:"image_url"`
 	Price       float64   `json:"price"`
+	VIPPrice    float64   `json:"vip_price"`
 }
 
 type EventFilterRequest struct {

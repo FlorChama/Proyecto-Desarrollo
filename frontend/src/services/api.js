@@ -30,6 +30,11 @@ export const cancelTicket = (id) => api.delete(`/tickets/${id}`)
 export const transferTicket = (id, targetEmail) => api.post(`/tickets/${id}/transfer`, { target_email: targetEmail })
 
 // Admin
+export const uploadEventImage = (file) => {
+  const fd = new FormData()
+  fd.append('image', file)
+  return api.post('/admin/events/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+}
 export const createEvent = (data) => api.post('/admin/events', data)
 export const updateEvent = (id, data) => api.put(`/admin/events/${id}`, data)
 export const deleteEvent = (id) => api.delete(`/admin/events/${id}`)

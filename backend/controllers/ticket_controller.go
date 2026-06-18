@@ -28,7 +28,7 @@ func (ctrl *TicketController) Buy(c *gin.Context) {
 		return
 	}
 
-	ticket, err := ctrl.ticketService.Buy(userID, body.EventID, body.PaymentMethod, body.Amount)
+	ticket, err := ctrl.ticketService.Buy(userID, body.EventID, body.PaymentMethod, body.TicketType, body.Amount)
 	if err != nil {
 		utils.HandleServiceError(c, err)
 		return

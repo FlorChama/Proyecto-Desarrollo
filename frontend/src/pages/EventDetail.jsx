@@ -13,7 +13,7 @@ const MOCK_EVENTS = [
     date: '2026-09-03', dates: ['2026-09-03'],
     venue: 'Hipódromo de San Isidro, Buenos Aires',
     capacity: 60000, available: 8500, category: 'internacional',
-    image_url: '/events/internacional2.png', price: 200000, vipPrice: 400000, status: 'active',
+    image_url: '/events/internacional2.png', price: 200000, vip_price: 400000, status: 'active',
   },
   {
     ID: 3,
@@ -22,7 +22,7 @@ const MOCK_EVENTS = [
     date: '2026-08-01', dates: ['2026-08-01', '2026-08-02', '2026-08-04', '2026-08-06'],
     venue: 'Movistar Arena, Buenos Aires',
     capacity: 15000, available: 1200, category: 'internacional',
-    image_url: '/events/internacional3.png', price: 200000, vipPrice: 650000, status: 'active',
+    image_url: '/events/internacional3.png', price: 200000, vip_price: 650000, status: 'active',
   },
   {
     ID: 4,
@@ -31,7 +31,7 @@ const MOCK_EVENTS = [
     date: '2026-10-21', dates: ['2026-10-21', '2026-10-23', '2026-10-24'],
     venue: 'Estadio Único de La Plata, Buenos Aires',
     capacity: 80000, available: 5200, category: 'internacional',
-    image_url: '/events/internacional1.png', price: 350000, vipPrice: 1000000, status: 'active',
+    image_url: '/events/internacional1.png', price: 350000, vip_price: 1000000, status: 'active',
   },
   {
     ID: 15,
@@ -40,7 +40,7 @@ const MOCK_EVENTS = [
     date: '2026-10-21', dates: ['2026-10-21', '2026-10-22'],
     venue: 'Movistar Arena, Buenos Aires',
     capacity: 15000, available: 500, category: 'internacional',
-    image_url: '/events/internacional4.png', price: 80000, vipPrice: 180000, status: 'active',
+    image_url: '/events/internacional4.png', price: 80000, vip_price: 180000, status: 'active',
   },
   {
     ID: 5,
@@ -67,7 +67,7 @@ const MOCK_EVENTS = [
     date: '2026-07-08', dates: ['2026-07-08'],
     venue: 'Movistar Arena, Buenos Aires',
     capacity: 15000, available: 6000, category: 'nacional',
-    image_url: '/events/nacional3.png', price: 75000, vipPrice: 110000, status: 'active',
+    image_url: '/events/nacional3.png', price: 75000, vip_price: 110000, status: 'active',
   },
   {
     ID: 8,
@@ -76,7 +76,7 @@ const MOCK_EVENTS = [
     date: '2026-09-19', dates: ['2026-09-19'],
     venue: 'Club Ciudad de Buenos Aires',
     capacity: 5000, available: 800, category: 'nacional',
-    image_url: '/events/nacional4.png', price: 111000, vipPrice: 160000, status: 'active',
+    image_url: '/events/nacional4.png', price: 111000, vip_price: 160000, status: 'active',
   },
   {
     ID: 9,
@@ -85,7 +85,7 @@ const MOCK_EVENTS = [
     date: '2026-07-04', dates: ['2026-07-04'],
     venue: 'Estadio Obras, Buenos Aires',
     capacity: 8000, available: 1500, category: 'nacional',
-    image_url: '/events/nacional5.png', price: 55000, vipPrice: 100000, status: 'active',
+    image_url: '/events/nacional5.png', price: 55000, vip_price: 100000, status: 'active',
   },
   {
     ID: 10,
@@ -103,7 +103,7 @@ const MOCK_EVENTS = [
     date: '2026-07-07', dates: ['2026-07-07'],
     venue: 'Movistar Arena, Buenos Aires',
     capacity: 15000, available: 2100, category: 'nacional',
-    image_url: '/events/teatro2.png', price: 60000, vipPrice: 120000, status: 'active',
+    image_url: '/events/teatro2.png', price: 60000, vip_price: 120000, status: 'active',
   },
   {
     ID: 12,
@@ -137,10 +137,11 @@ const MOCK_EVENTS = [
 const isMusicCategory = (cat) => cat === 'nacional' || cat === 'internacional'
 
 const TICKET_TYPES = (event) => {
-  if (isMusicCategory(event?.category) && !event?.noVip) {
+  const vipPrice = event?.vip_price || event?.vipPrice
+  if (vipPrice > 0) {
     return [
       { id: 'general', name: 'General', price: event.price },
-      { id: 'vip',     name: 'VIP',     price: event.vipPrice ?? Math.round(event.price * 2) },
+      { id: 'vip',     name: 'VIP',     price: vipPrice },
     ]
   }
   return [

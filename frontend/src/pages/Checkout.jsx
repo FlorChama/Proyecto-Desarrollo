@@ -181,7 +181,12 @@ export default function Checkout() {
     setBuying(true)
     try {
       const methodMap = { card: 'credit_card', modo: 'modo', mp: 'mercadopago' }
-      await buyTicket(Number(id), methodMap[payMethod] || payMethod, total, ticketType.id || 'general')
+      const method = methodMap[payMethod] || payMethod
+      const type = ticketType.id || 'general'
+      const pricePerTicket = ticketType.price
+      for (let i = 0; i < quantity; i++) {
+        await buyTicket(Number(id), method, pricePerTicket, type)
+      }
       setSuccess(true)
       setStep(3)
     } catch {

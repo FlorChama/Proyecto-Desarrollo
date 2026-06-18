@@ -24,6 +24,7 @@ type Event struct {
 	Category    string    `json:"category"`
 	ImageURL    string    `json:"image_url"`
 	Price       float64   `gorm:"not null" json:"price"`
+	VIPPrice    float64   `gorm:"default:0" json:"vip_price"`
 	Status      string    `gorm:"default:'active'" json:"status"`
 	Tickets     []Ticket  `json:"tickets,omitempty"`
 }

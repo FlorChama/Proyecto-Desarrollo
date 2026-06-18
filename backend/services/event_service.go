@@ -39,6 +39,7 @@ func (s *EventService) Create(req domain.CreateEventRequest) (*domain.Event, err
 		Category:    req.Category,
 		ImageURL:    req.ImageURL,
 		Price:       req.Price,
+		VIPPrice:    req.VIPPrice,
 		Status:      domain.EventStatusActive,
 	}
 
@@ -88,6 +89,9 @@ func (s *EventService) Update(id uint, req domain.UpdateEventRequest) (*domain.E
 	}
 	if req.Price > 0 {
 		event.Price = req.Price
+	}
+	if req.VIPPrice >= 0 {
+		event.VIPPrice = req.VIPPrice
 	}
 	if req.ExtraDates != "" {
 		event.ExtraDates = req.ExtraDates
