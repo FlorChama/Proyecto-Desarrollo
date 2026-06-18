@@ -100,6 +100,7 @@ func main() {
 		{
 			auth.POST("/register", authCtrl.Register)
 			auth.POST("/login", authCtrl.Login)
+			auth.POST("/reset-password", authCtrl.ResetPassword)
 			auth.PUT("/change-password", middleware.AuthRequired(), authCtrl.ChangePassword)
 		}
 

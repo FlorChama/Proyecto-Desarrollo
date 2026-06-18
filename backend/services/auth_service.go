@@ -46,6 +46,14 @@ func (s *AuthService) Register(req domain.RegisterRequest) (*domain.AuthResponse
 	return &domain.AuthResponse{Token: token, User: *user}, nil
 }
 
+func (s *AuthService) ResetPassword(req domain.ResetPasswordRequest) error {
+	user, err := s.userDAO.FindByEmail(req.Email)
+	if err != nil {
+		return errors.New("no existe ningún usuario con ese email")
+	}
+	return s.userDAO.UpdatePassword(user.ID, utils.HashPassword(req.NewPassword))
+}
+
 func (s *AuthService) ChangePassword(userID uint, req domain.ChangePasswordRequest) error {
 	user, err := s.userDAO.FindByID(userID)
 	if err != nil {

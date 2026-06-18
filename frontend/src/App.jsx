@@ -9,6 +9,7 @@ import MyTickets from './pages/MyTickets'
 import AdminPanel from './pages/AdminPanel'
 import Checkout from './pages/Checkout'
 import Profile from './pages/Profile'
+import ResetPassword from './pages/ResetPassword'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { isAuthenticated, isAdmin, loading } = useAuth()
@@ -37,6 +38,7 @@ function AppRoutes() {
         <Route path="/admin" element={
           <ProtectedRoute adminOnly><AdminPanel /></ProtectedRoute>
         } />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/perfil" element={
           <ProtectedRoute><Profile /></ProtectedRoute>
         } />

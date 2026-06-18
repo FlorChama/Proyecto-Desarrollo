@@ -59,6 +59,11 @@ type ChangePasswordRequest struct {
 	NewPassword     string `json:"new_password" binding:"required,min=6"`
 }
 
+type ResetPasswordRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
 // Ticket
 type BuyTicketRequest struct {
 	EventID       uint    `json:"event_id" binding:"required"`

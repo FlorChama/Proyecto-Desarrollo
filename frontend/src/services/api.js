@@ -30,6 +30,7 @@ export const cancelTicket = (id) => api.delete(`/tickets/${id}`)
 export const transferTicket = (id, targetEmail) => api.post(`/tickets/${id}/transfer`, { target_email: targetEmail })
 
 export const changePassword = (data) => api.put('/auth/change-password', data)
+export const resetPassword = (data) => api.post('/auth/reset-password', data)
 
 // Admin
 export const getAdminEvents = () => api.get('/admin/events')
