@@ -148,18 +148,18 @@ export default function Checkout() {
     e.preventDefault()
     const { nombre, apellido, dni, email, telefono } = personal
     const errs = {}
-    if (!nombre.trim())  errs.nombre   = 'Campo requerido'
-    if (!apellido.trim()) errs.apellido = 'Campo requerido'
-    if (!dni)             errs.dni      = 'Campo requerido'
-    else if (!/^\d{7,8}$/.test(dni)) errs.dni = 'El DNI debe tener 7 u 8 dígitos'
-    if (!email)           errs.email    = 'Campo requerido'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Email inválido'
-    if (!telefono)        errs.telefono = 'Campo requerido'
-    else if (!/^\d{8,15}$/.test(telefono)) errs.telefono = 'El teléfono debe tener entre 8 y 15 dígitos'
+    if (!nombre.trim())   errs.nombre   = 'Campo no completado'
+    if (!apellido.trim()) errs.apellido = 'Campo no completado'
+    if (!dni)             errs.dni      = 'Campo no completado'
+    else if (!/^\d{7,8}$/.test(dni)) errs.dni = `DNI no válido — ingresaste ${dni.length} dígito${dni.length !== 1 ? 's' : ''}, debe tener 7 u 8`
+    if (!email)           errs.email    = 'Campo no completado'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Email no válido'
+    if (!telefono)        errs.telefono = 'Campo no completado'
+    else if (!/^\d{8,15}$/.test(telefono)) errs.telefono = `Teléfono no válido — ingresaste ${telefono.length} dígito${telefono.length !== 1 ? 's' : ''}, debe tener entre 8 y 15`
 
     setFieldErrors(errs)
     if (Object.keys(errs).length > 0) {
-      setPersonalError('Revisá los campos marcados en rojo.')
+      setPersonalError('Revisá los campos marcados abajo antes de continuar.')
       return
     }
     setPersonalError('')
