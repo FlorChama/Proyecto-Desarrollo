@@ -6,6 +6,20 @@ Sistema tipo Ticketek desarrollado como Práctico Integrador 2026 — Desarrollo
 
 TicketHub permite explorar eventos, comprar entradas, cancelarlas y traspasar su titularidad a otros usuarios. Los administradores pueden crear y gestionar eventos y ver métricas de ocupación.
 
+## Capturas de Pantalla
+
+| Home — Catálogo de eventos | Inicio de sesión |
+|---|---|
+| ![Home](docs/screenshots/home.png) | ![Login](docs/screenshots/login.png) |
+
+| Panel de administración | Detalle de evento |
+|---|---|
+| ![Admin](docs/screenshots/admin-panel.png) | ![Evento](docs/screenshots/evento-detalle.png) |
+
+| Restablecer contraseña |
+|---|
+| ![Reset](docs/screenshots/reset-password.png) |
+
 ## Tecnologías Utilizadas
 
 | Capa | Tecnología |
@@ -67,32 +81,21 @@ Frontend disponible en http://localhost:5173
 
 ### Ejecutar tests
 
-Los tests de integración necesitan un MySQL de test. La forma más simple es
-levantar un contenedor descartable en el puerto 3307:
+Los tests usan **SQLite en memoria** — no requieren Docker ni ninguna base de datos externa.
+
+Desde `backend/`:
 
 ```bash
-docker run -d --name ticketek-test-mysql -e MYSQL_ROOT_PASSWORD=root \
-  -e MYSQL_DATABASE=ticketek_test -p 3307:3306 mysql:8.0
+# Correr todos los tests con detalle
+go test ./tests/... -v
+
+# Sin logs de GORM (salida más limpia)
+go test ./tests/... -v 2>/dev/null
+
+# Ver cobertura sobre servicios y controladores (objetivo: 80%)
+go test ./tests/... -coverprofile=coverage.out -coverpkg=./controllers/...,./services/...
+go tool cover -func=coverage.out | grep total
 ```
-
-Luego, desde `backend/`:
-
-```bash
-# Windows (PowerShell)
-$env:TEST_DB_PORT="3307"; go test ./tests/... -v
-
-# Linux / Mac
-TEST_DB_PORT=3307 go test ./tests/... -v
-```
-
-Cobertura sobre las capas de servicios y controladores (objetivo 80%):
-
-```bash
-go test ./tests/ "-coverpkg=./services/...,./controllers/..." -cover
-```
-
-> Si no hay una base de datos de test disponible, los tests de integración se
-> saltean automáticamente (no fallan el build).
 
 ## Usuarios de Prueba
 
@@ -122,6 +125,8 @@ Credenciales de demostración sugeridas:
 erDiagram
     USER ||--o{ TICKET : "compra"
     EVENT ||--o{ TICKET : "tiene"
+    TICKET ||--|| PAYMENT : "genera"
+    USER ||--o{ PAYMENT : "realiza"
 
     USER {
         uint id PK
@@ -138,6 +143,7 @@ erDiagram
         int capacity
         int available
         float price
+        float vip_price
         string status "active | cancelled"
     }
     TICKET {
@@ -145,7 +151,17 @@ erDiagram
         uint user_id FK
         uint event_id FK
         string status "active | cancelled | transferred"
-        string qr_code "QR base64 (Bonus)"
+        string ticket_type "general | vip"
+        float price
+        string qr_code "QR base64"
+    }
+    PAYMENT {
+        uint id PK
+        uint ticket_id FK
+        uint user_id FK
+        float amount
+        string method
+        string status "approved | pending | failed"
     }
 ```
 
