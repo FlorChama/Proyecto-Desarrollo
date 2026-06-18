@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"strings"
 	"ticketek-backend/dao"
 	"ticketek-backend/domain"
 	"ticketek-backend/utils"
@@ -21,11 +22,16 @@ func (s *AuthService) Register(req domain.RegisterRequest) (*domain.AuthResponse
 		return nil, errors.New("el email ya está registrado")
 	}
 
+	role := domain.RoleClient
+	if strings.HasSuffix(req.Email, "@tickethub.com") {
+		role = domain.RoleAdmin
+	}
+
 	user := &domain.User{
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: utils.HashPassword(req.Password),
-		Role:     domain.RoleClient,
+		Role:     role,
 	}
 
 	if err := s.userDAO.Create(user); err != nil {

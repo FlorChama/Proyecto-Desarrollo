@@ -24,6 +24,7 @@ type CreateEventRequest struct {
 	Title       string    `json:"title" binding:"required"`
 	Description string    `json:"description"`
 	Date        time.Time `json:"date" binding:"required"`
+	ExtraDates  string    `json:"extra_dates"`
 	Duration    int       `json:"duration"`
 	Venue       string    `json:"venue" binding:"required"`
 	Capacity    int       `json:"capacity" binding:"required,min=1"`
@@ -36,6 +37,7 @@ type UpdateEventRequest struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Date        time.Time `json:"date"`
+	ExtraDates  string    `json:"extra_dates"`
 	Duration    int       `json:"duration"`
 	Venue       string    `json:"venue"`
 	Capacity    int       `json:"capacity"`

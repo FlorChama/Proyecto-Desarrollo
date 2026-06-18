@@ -172,8 +172,12 @@ export default function EventDetail() {
       .then(res => {
         const data = res.data.data
         if (data) {
+          // Construir array de fechas desde extra_dates del backend
+          const mainDate = data.date ? data.date.slice(0, 10) : ''
+          const extra = data.extra_dates ? data.extra_dates.split(',').map(d => d.trim()).filter(Boolean) : []
+          data.dates = [mainDate, ...extra].filter(Boolean)
           setEvent(data)
-          const dates = data.dates || (data.date ? [data.date] : [])
+          const dates = data.dates
           if (dates.length === 1) setSelectedDate(dates[0])
         }
       })

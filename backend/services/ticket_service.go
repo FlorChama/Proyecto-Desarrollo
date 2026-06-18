@@ -145,6 +145,14 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 		return nil, errors.New("error obteniendo datos del propietario")
 	}
 
+	// Marcar el ticket original como traspasado (el dueño original lo sigue viendo)
+	ticket.Status = domain.TicketStatusTransferred
+	ticket.User = domain.User{}
+	ticket.Event = domain.Event{}
+	if err := s.ticketDAO.Update(ticket); err != nil {
+		return nil, errors.New("error al traspasar la entrada")
+	}
+
 	// Generar nuevo QR para el nuevo titular
 	qrData := utils.GenerateTicketQRData(ticket.ID, targetUser.ID, ticket.EventID)
 	newQR, err := utils.GenerateQRCode(qrData)
@@ -152,16 +160,15 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 		return nil, fmt.Errorf("error generando nuevo QR: %w", err)
 	}
 
-	ticket.UserID = targetUser.ID
-	ticket.QRCode = newQR
-	ticket.Status = domain.TicketStatusActive
-	// Limpiamos las asociaciones precargadas (User/Event) para que GORM no
-	// reescriba la clave foránea user_id con el titular anterior al guardar.
-	ticket.User = domain.User{}
-	ticket.Event = domain.Event{}
-
-	if err := s.ticketDAO.Update(ticket); err != nil {
-		return nil, errors.New("error al traspasar la entrada")
+	// Crear ticket nuevo para el nuevo titular
+	newTicket := &domain.Ticket{
+		UserID:  targetUser.ID,
+		EventID: ticket.EventID,
+		Status:  domain.TicketStatusActive,
+		QRCode:  newQR,
+	}
+	if err := s.ticketDAO.Create(newTicket); err != nil {
+		return nil, errors.New("error al crear entrada para el nuevo titular")
 	}
 
 	event, _ := s.eventDAO.FindByID(ticket.EventID)
@@ -173,7 +180,7 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 	// Bonus: notificación por email al nuevo titular
 	go s.emailClient.SendTransferNotification(targetUser.Email, targetUser.Name, owner.Name, eventTitle, newQR)
 
-	return ticket, nil
+	return newTicket, nil
 }
 
 func (s *TicketService) GetEventReport(eventID uint) (*domain.EventReportResponse, error) {

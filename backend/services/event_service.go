@@ -31,6 +31,7 @@ func (s *EventService) Create(req domain.CreateEventRequest) (*domain.Event, err
 		Title:       req.Title,
 		Description: req.Description,
 		Date:        req.Date,
+		ExtraDates:  req.ExtraDates,
 		Duration:    req.Duration,
 		Venue:       req.Venue,
 		Capacity:    req.Capacity,
@@ -87,6 +88,9 @@ func (s *EventService) Update(id uint, req domain.UpdateEventRequest) (*domain.E
 	}
 	if req.Price > 0 {
 		event.Price = req.Price
+	}
+	if req.ExtraDates != "" {
+		event.ExtraDates = req.ExtraDates
 	}
 
 	if err := s.eventDAO.Update(event); err != nil {

@@ -232,7 +232,10 @@ export default function Home() {
     setLoading(true)
     try {
       const res = await getEvents({})
-      const data = res.data.data || []
+      const data = (res.data.data || []).map(e => ({
+        ...e,
+        dates: [e.date?.slice(0,10), ...(e.extra_dates ? e.extra_dates.split(',').map(d=>d.trim()).filter(Boolean) : [])].filter(Boolean)
+      }))
       setAllEvents(data.length > 0 ? data : MOCK_EVENTS)
     } catch {
       setAllEvents(MOCK_EVENTS)
