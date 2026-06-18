@@ -106,7 +106,7 @@ export default function Navbar() {
           {isAuthenticated() ? (
             <div className={styles.userMenu}>
               {isAdmin() && <span className={styles.adminBadge}>Admin</span>}
-              <span className={styles.userName}>Hola, {user?.name?.split(' ')[0]}</span>
+              <Link to="/perfil" className={styles.userName}>Hola, {user?.name?.split(' ')[0]}</Link>
               <button onClick={handleLogout} className={styles.logoutBtn}>Cerrar sesión</button>
             </div>
           ) : (

@@ -33,6 +33,20 @@ func (ctrl *AuthController) Register(c *gin.Context) {
 	utils.CreatedResponse(c, resp)
 }
 
+func (ctrl *AuthController) ChangePassword(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	var req domain.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := ctrl.authService.ChangePassword(userID, req); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	utils.SuccessResponse(c, gin.H{"message": "contraseña actualizada correctamente"})
+}
+
 func (ctrl *AuthController) Login(c *gin.Context) {
 	var req domain.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

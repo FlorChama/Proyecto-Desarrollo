@@ -100,6 +100,7 @@ func main() {
 		{
 			auth.POST("/register", authCtrl.Register)
 			auth.POST("/login", authCtrl.Login)
+			auth.PUT("/change-password", middleware.AuthRequired(), authCtrl.ChangePassword)
 		}
 
 		// Eventos (público)

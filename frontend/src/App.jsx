@@ -8,6 +8,7 @@ import Register from './pages/Register'
 import MyTickets from './pages/MyTickets'
 import AdminPanel from './pages/AdminPanel'
 import Checkout from './pages/Checkout'
+import Profile from './pages/Profile'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { isAuthenticated, isAdmin, loading } = useAuth()
@@ -35,6 +36,9 @@ function AppRoutes() {
         } />
         <Route path="/admin" element={
           <ProtectedRoute adminOnly><AdminPanel /></ProtectedRoute>
+        } />
+        <Route path="/perfil" element={
+          <ProtectedRoute><Profile /></ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

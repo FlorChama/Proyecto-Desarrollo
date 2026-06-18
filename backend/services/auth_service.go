@@ -46,6 +46,20 @@ func (s *AuthService) Register(req domain.RegisterRequest) (*domain.AuthResponse
 	return &domain.AuthResponse{Token: token, User: *user}, nil
 }
 
+func (s *AuthService) ChangePassword(userID uint, req domain.ChangePasswordRequest) error {
+	user, err := s.userDAO.FindByID(userID)
+	if err != nil {
+		return errors.New("usuario no encontrado")
+	}
+	if !utils.CheckPassword(req.CurrentPassword, user.Password) {
+		return errors.New("la contraseña actual es incorrecta")
+	}
+	if len(req.NewPassword) < 6 {
+		return errors.New("la nueva contraseña debe tener al menos 6 caracteres")
+	}
+	return s.userDAO.UpdatePassword(userID, utils.HashPassword(req.NewPassword))
+}
+
 func (s *AuthService) Login(req domain.LoginRequest) (*domain.AuthResponse, error) {
 	user, err := s.userDAO.FindByEmail(req.Email)
 	if err != nil {

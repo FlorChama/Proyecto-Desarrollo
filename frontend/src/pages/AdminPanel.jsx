@@ -25,7 +25,8 @@ export default function AdminPanel() {
     setLoading(true)
     try {
       const res = await getAdminEvents()
-      setEvents(res.data.data || [])
+      const all = res.data.data || []
+      setEvents(all.filter(e => e.status !== 'cancelled'))
     } finally {
       setLoading(false)
     }
@@ -219,7 +220,12 @@ export default function AdminPanel() {
                   <label>Categoría</label>
                   <select value={form.category} onChange={(e) => setForm({...form, category: e.target.value})}>
                     <option value="">Seleccionar</option>
-                    {['Música', 'Teatro', 'Deporte', 'Arte', 'Tecnología', 'Otro'].map(c => <option key={c}>{c}</option>)}
+                    <option value="internacional">Música Internacional</option>
+                    <option value="nacional">Música Nacional</option>
+                    <option value="teatro">Teatro</option>
+                    <option value="standup">Stand up</option>
+                    <option value="deporte">Deporte</option>
+                    <option value="arte">Arte</option>
                   </select>
                 </div>
 

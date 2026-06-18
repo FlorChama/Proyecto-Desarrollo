@@ -54,6 +54,11 @@ type EventFilterRequest struct {
 	Available bool   `form:"available"`
 }
 
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=6"`
+}
+
 // Ticket
 type BuyTicketRequest struct {
 	EventID       uint    `json:"event_id" binding:"required"`

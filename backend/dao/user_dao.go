@@ -35,3 +35,7 @@ func (d *UserDAO) FindByID(id uint) (*domain.User, error) {
 	}
 	return &user, nil
 }
+
+func (d *UserDAO) UpdatePassword(id uint, hashedPassword string) error {
+	return d.db.Model(&domain.User{}).Where("id = ?", id).Update("password", hashedPassword).Error
+}
