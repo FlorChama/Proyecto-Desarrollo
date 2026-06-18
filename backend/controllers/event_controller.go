@@ -39,6 +39,16 @@ func (ctrl *EventController) GetAll(c *gin.Context) {
 	utils.SuccessResponse(c, events)
 }
 
+// GetAllAdmin - GET /api/admin/events (admin)
+func (ctrl *EventController) GetAllAdmin(c *gin.Context) {
+	events, err := ctrl.eventService.GetAllAdmin()
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	utils.SuccessResponse(c, events)
+}
+
 // GetByID - GET /api/events/:id (público)
 func (ctrl *EventController) GetByID(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)

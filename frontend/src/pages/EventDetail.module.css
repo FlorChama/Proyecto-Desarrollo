@@ -183,6 +183,19 @@
   opacity: 1;
 }
 
+.soldOutBadge {
+  background: rgba(231, 76, 60, 0.15);
+  color: var(--error);
+  border: 1px solid var(--error);
+  border-radius: 8px;
+  padding: 0 1.5rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
 /* ── Contenido ── */
 .content {
   max-width: 860px;

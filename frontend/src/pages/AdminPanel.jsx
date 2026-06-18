@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getEvents, createEvent, updateEvent, deleteEvent, getEventReport, uploadEventImage } from '../services/api'
+import { getAdminEvents, createEvent, updateEvent, deleteEvent, getEventReport, uploadEventImage } from '../services/api'
 import styles from './AdminPanel.module.css'
 
 const emptyForm = {
@@ -24,7 +24,7 @@ export default function AdminPanel() {
   const fetchEvents = async () => {
     setLoading(true)
     try {
-      const res = await getEvents()
+      const res = await getAdminEvents()
       setEvents(res.data.data || [])
     } finally {
       setLoading(false)

@@ -124,6 +124,7 @@ func main() {
 		admin := api.Group("/admin")
 		admin.Use(middleware.AuthRequired(), middleware.AdminRequired())
 		{
+			admin.GET("/events", eventCtrl.GetAllAdmin)
 			admin.POST("/events/upload", eventCtrl.UploadImage)
 			admin.POST("/events", eventCtrl.Create)
 			admin.PUT("/events/:id", eventCtrl.Update)

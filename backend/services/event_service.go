@@ -18,6 +18,10 @@ func (s *EventService) GetAll(filter domain.EventFilterRequest) ([]domain.Event,
 	return s.eventDAO.FindAll(filter)
 }
 
+func (s *EventService) GetAllAdmin() ([]domain.Event, error) {
+	return s.eventDAO.FindAllAdmin()
+}
+
 func (s *EventService) GetByID(id uint) (*domain.Event, error) {
 	event, err := s.eventDAO.FindByID(id)
 	if err != nil {

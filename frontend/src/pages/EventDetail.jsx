@@ -197,7 +197,8 @@ export default function EventDetail() {
 
   const ticketTypes = TICKET_TYPES(event)
   const currentType = ticketTypes.find(t => t.id === selectedType)
-  const canBuy = selectedDate && selectedType
+  const isSoldOut = event?.available <= 0
+  const canBuy = selectedDate && selectedType && !isSoldOut
 
   const handleBuy = () => {
     if (!isAuthenticated()) { navigate('/login'); return }
@@ -293,13 +294,17 @@ export default function EventDetail() {
           </div>
 
           {/* Botón comprar */}
-          <button
-            className={`${styles.buyBtn} ${!canBuy ? styles.buyBtnDisabled : ''}`}
-            onClick={handleBuy}
-            disabled={!canBuy}
-          >
-            Comprar
-          </button>
+          {isSoldOut ? (
+            <div className={styles.soldOutBadge}>Agotado</div>
+          ) : (
+            <button
+              className={`${styles.buyBtn} ${!canBuy ? styles.buyBtnDisabled : ''}`}
+              onClick={handleBuy}
+              disabled={!canBuy}
+            >
+              Comprar
+            </button>
+          )}
         </div>
       </div>
 
