@@ -27,7 +27,7 @@ func NewTicketService(ticketDAO *dao.TicketDAO, eventDAO *dao.EventDAO, userDAO 
 	}
 }
 
-func (s *TicketService) Buy(userID, eventID uint, paymentMethod, ticketType string, amount float64) (*domain.Ticket, error) {
+func (s *TicketService) Buy(userID, eventID uint, paymentMethod, ticketType string) (*domain.Ticket, error) {
 	event, err := s.eventDAO.FindByID(eventID)
 	if err != nil {
 		return nil, domain.ErrEventoNoEncontrado
@@ -47,7 +47,15 @@ func (s *TicketService) Buy(userID, eventID uint, paymentMethod, ticketType stri
 	if ticketType == "" {
 		ticketType = "general"
 	}
-	pricePerTicket := amount
+	// El precio es una regla de negocio: lo define el servidor según el evento y
+	// el tipo de entrada, nunca el cliente.
+	pricePerTicket := event.Price
+	if ticketType == "vip" {
+		if event.VIPPrice <= 0 {
+			return nil, errors.New("este evento no tiene entradas VIP disponibles")
+		}
+		pricePerTicket = event.VIPPrice
+	}
 	ticket := &domain.Ticket{
 		UserID:     userID,
 		EventID:    eventID,
@@ -80,11 +88,13 @@ func (s *TicketService) Buy(userID, eventID uint, paymentMethod, ticketType stri
 	payment := &domain.Payment{
 		TicketID: ticket.ID,
 		UserID:   userID,
-		Amount:   amount,
+		Amount:   pricePerTicket,
 		Method:   paymentMethod,
 		Status:   domain.PaymentStatusApproved,
 	}
-	_ = s.paymentDAO.Create(payment)
+	if err := s.paymentDAO.Create(payment); err != nil {
+		return nil, errors.New("error al registrar el pago")
+	}
 
 	// Bonus: notificación por email
 	go s.emailClient.SendPurchaseConfirmation(user.Email, user.Name, event.Title, qrCode)

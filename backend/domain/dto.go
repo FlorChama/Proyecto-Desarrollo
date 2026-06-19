@@ -66,10 +66,9 @@ type ResetPasswordRequest struct {
 
 // Ticket
 type BuyTicketRequest struct {
-	EventID       uint    `json:"event_id" binding:"required"`
-	PaymentMethod string  `json:"payment_method" binding:"required"`
-	TicketType    string  `json:"ticket_type"`
-	Amount        float64 `json:"amount" binding:"required,min=0"`
+	EventID       uint   `json:"event_id" binding:"required"`
+	PaymentMethod string `json:"payment_method" binding:"required"`
+	TicketType    string `json:"ticket_type"`
 }
 
 type TransferRequest struct {
