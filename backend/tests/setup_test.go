@@ -31,6 +31,15 @@ func setupTestDB(t *testing.T) *gorm.DB {
 	if err := db.AutoMigrate(&domain.User{}, &domain.Event{}, &domain.Ticket{}, &domain.Payment{}); err != nil {
 		t.Fatalf("error en migraciones de test: %v", err)
 	}
+
+	// Cerramos la conexión al terminar el test para que el archivo temporal de
+	// SQLite pueda eliminarse (en Windows queda bloqueado si sigue abierto).
+	t.Cleanup(func() {
+		if sqlDB, err := db.DB(); err == nil {
+			sqlDB.Close()
+		}
+	})
+
 	return db
 }
 
