@@ -3,27 +3,24 @@ package services
 import (
 	"errors"
 	"fmt"
-	"ticketek-backend/clients"
 	"ticketek-backend/dao"
 	"ticketek-backend/domain"
 	"ticketek-backend/utils"
 )
 
 type TicketService struct {
-	ticketDAO   *dao.TicketDAO
-	eventDAO    *dao.EventDAO
-	userDAO     *dao.UserDAO
-	paymentDAO  *dao.PaymentDAO
-	emailClient *clients.EmailClient
+	ticketDAO  *dao.TicketDAO
+	eventDAO   *dao.EventDAO
+	userDAO    *dao.UserDAO
+	paymentDAO *dao.PaymentDAO
 }
 
-func NewTicketService(ticketDAO *dao.TicketDAO, eventDAO *dao.EventDAO, userDAO *dao.UserDAO, paymentDAO *dao.PaymentDAO, emailClient *clients.EmailClient) *TicketService {
+func NewTicketService(ticketDAO *dao.TicketDAO, eventDAO *dao.EventDAO, userDAO *dao.UserDAO, paymentDAO *dao.PaymentDAO) *TicketService {
 	return &TicketService{
-		ticketDAO:   ticketDAO,
-		eventDAO:    eventDAO,
-		userDAO:     userDAO,
-		paymentDAO:  paymentDAO,
-		emailClient: emailClient,
+		ticketDAO:  ticketDAO,
+		eventDAO:   eventDAO,
+		userDAO:    userDAO,
+		paymentDAO: paymentDAO,
 	}
 }
 
@@ -39,8 +36,7 @@ func (s *TicketService) Buy(userID, eventID uint, paymentMethod, ticketType stri
 		return nil, errors.New("no hay entradas disponibles")
 	}
 
-	user, err := s.userDAO.FindByID(userID)
-	if err != nil {
+	if _, err := s.userDAO.FindByID(userID); err != nil {
 		return nil, domain.ErrUsuarioNoEncontrado
 	}
 
@@ -95,9 +91,6 @@ func (s *TicketService) Buy(userID, eventID uint, paymentMethod, ticketType stri
 	if err := s.paymentDAO.Create(payment); err != nil {
 		return nil, errors.New("error al registrar el pago")
 	}
-
-	// Bonus: notificación por email
-	go s.emailClient.SendPurchaseConfirmation(user.Email, user.Name, event.Title, qrCode)
 
 	return ticket, nil
 }
@@ -156,11 +149,6 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 		return nil, errors.New("no podés traspasar la entrada a vos mismo")
 	}
 
-	owner, err := s.userDAO.FindByID(ownerID)
-	if err != nil {
-		return nil, errors.New("error obteniendo datos del propietario")
-	}
-
 	// Marcar el ticket original como traspasado (el dueño original lo sigue viendo)
 	ticket.Status = domain.TicketStatusTransferred
 	ticket.User = domain.User{}
@@ -186,15 +174,6 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 	if err := s.ticketDAO.Create(newTicket); err != nil {
 		return nil, errors.New("error al crear entrada para el nuevo titular")
 	}
-
-	event, _ := s.eventDAO.FindByID(ticket.EventID)
-	eventTitle := ""
-	if event != nil {
-		eventTitle = event.Title
-	}
-
-	// Bonus: notificación por email al nuevo titular
-	go s.emailClient.SendTransferNotification(targetUser.Email, targetUser.Name, owner.Name, eventTitle, newQR)
 
 	return newTicket, nil
 }

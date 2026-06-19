@@ -29,7 +29,6 @@ TicketHub permite explorar eventos, comprar entradas, cancelarlas y traspasarlas
 | ORM | GORM (con driver MySQL) |
 | Autenticación | JWT (golang-jwt/jwt v5) |
 | QR Code | skip2/go-qrcode |
-| Email | gopkg.in/gomail.v2 |
 | Frontend | React 18, Vite, React Router v6 |
 | HTTP Client | Axios |
 | DevOps | Docker, Docker Compose, Nginx |
@@ -117,6 +116,6 @@ Credenciales de demostración sugeridas:
 
 **4. Limpieza de asociaciones en el traspaso:** Al traspasar, el ticket se carga con las asociaciones precargadas (`Preload("User")`). Antes de guardar el nuevo titular, se limpian esas asociaciones para evitar que GORM reescriba la clave foránea `user_id` con el titular anterior. Este caso fue detectado y cubierto por los tests de integración.
 
-## Bonus Track — Notificaciones por Email con QR
+## Bonus Track — Código QR por entrada
 
-Al comprar una entrada, el sistema envía un email al comprador con el QR embebido. Al traspasar un ticket, se genera un nuevo QR y se notifica al nuevo titular por email (el QR viejo queda inválido). El QR se almacena como campo `qr_code` en la tabla `tickets`.
+Cada entrada incluye un código QR único generado en el servidor, que codifica un identificador del ticket (`TICKET-{id}-USER-{id}-EVENT-{id}`). Al traspasar una entrada se genera un QR nuevo y el anterior queda inválido, de modo que el titular original no pueda reutilizarlo. El QR se almacena como campo `qr_code` en la tabla `tickets` (imagen en base64).

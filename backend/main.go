@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"ticketek-backend/clients"
 	"ticketek-backend/controllers"
 	"ticketek-backend/dao"
 	"ticketek-backend/domain"
@@ -98,13 +97,10 @@ func main() {
 	ticketDAO := dao.NewTicketDAO(db)
 	paymentDAO := dao.NewPaymentDAO(db)
 
-	// Clients
-	emailClient := clients.NewEmailClient()
-
 	// Services
 	authService := services.NewAuthService(userDAO)
 	eventService := services.NewEventService(eventDAO)
-	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO, paymentDAO, emailClient)
+	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO, paymentDAO)
 
 	// Controllers
 	authCtrl := controllers.NewAuthController(authService)

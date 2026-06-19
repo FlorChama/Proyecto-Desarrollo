@@ -3,7 +3,6 @@ package tests
 import (
 	"testing"
 
-	"ticketek-backend/clients"
 	"ticketek-backend/controllers"
 	"ticketek-backend/dao"
 	"ticketek-backend/domain"
@@ -52,11 +51,10 @@ func setupTestServer(db *gorm.DB) *gin.Engine {
 	eventDAO := dao.NewEventDAO(db)
 	ticketDAO := dao.NewTicketDAO(db)
 	paymentDAO := dao.NewPaymentDAO(db)
-	emailClient := clients.NewEmailClient() // SMTP vacío: el envío falla en segundo plano, no rompe los tests
 
 	authService := services.NewAuthService(userDAO)
 	eventService := services.NewEventService(eventDAO)
-	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO, paymentDAO, emailClient)
+	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO, paymentDAO)
 
 	authCtrl := controllers.NewAuthController(authService)
 	eventCtrl := controllers.NewEventController(eventService)
