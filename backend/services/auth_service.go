@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"strings"
 	"ticketek-backend/dao"
 	"ticketek-backend/domain"
 	"ticketek-backend/utils"
@@ -22,16 +21,14 @@ func (s *AuthService) Register(req domain.RegisterRequest) (*domain.AuthResponse
 		return nil, errors.New("el email ya está registrado")
 	}
 
-	role := domain.RoleClient
-	if strings.HasSuffix(req.Email, "@tickethub.com") {
-		role = domain.RoleAdmin
-	}
-
+	// El registro público siempre crea un Cliente. El rol Administrador no se
+	// puede auto-asignar desde un campo del request: se provisiona con el seed
+	// inicial (ver main.go).
 	user := &domain.User{
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: utils.HashPassword(req.Password),
-		Role:     role,
+		Role:     domain.RoleClient,
 	}
 
 	if err := s.userDAO.Create(user); err != nil {

@@ -10,6 +10,7 @@ import (
 	"ticketek-backend/domain"
 	"ticketek-backend/middleware"
 	"ticketek-backend/services"
+	"ticketek-backend/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
@@ -55,8 +56,41 @@ func initDB() *gorm.DB {
 	return db
 }
 
+// seedAdmin crea un usuario administrador inicial si todavía no existe ninguno.
+// El rol Administrador se provisiona acá (no desde el registro público), de modo
+// que nadie pueda auto-asignarse permisos de admin al registrarse.
+func seedAdmin(db *gorm.DB) {
+	email := os.Getenv("ADMIN_EMAIL")
+	if email == "" {
+		email = "admin@tickethub.com"
+	}
+	pass := os.Getenv("ADMIN_PASSWORD")
+	if pass == "" {
+		pass = "admin123"
+	}
+
+	var count int64
+	db.Model(&domain.User{}).Where("role = ?", domain.RoleAdmin).Count(&count)
+	if count > 0 {
+		return
+	}
+
+	admin := &domain.User{
+		Name:     "Administrador",
+		Email:    email,
+		Password: utils.HashPassword(pass),
+		Role:     domain.RoleAdmin,
+	}
+	if err := db.Create(admin).Error; err != nil {
+		log.Printf("No se pudo crear el administrador inicial: %v", err)
+		return
+	}
+	log.Printf("Administrador inicial creado: %s", email)
+}
+
 func main() {
 	db := initDB()
+	seedAdmin(db)
 
 	// DAOs
 	userDAO := dao.NewUserDAO(db)
