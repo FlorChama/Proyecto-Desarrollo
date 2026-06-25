@@ -149,7 +149,15 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 		return nil, errors.New("no podés traspasar la entrada a vos mismo")
 	}
 
-	// Marcar el ticket original como traspasado (el dueño original lo sigue viendo)
+	// Si la entrada "vuelve" al destinatario (antes él la había traspasado),
+	// borramos su registro viejo de traspaso para ese evento así no le queda
+	// duplicado en la base.
+	if err := s.ticketDAO.DeleteTransferredByUserAndEvent(targetUser.ID, ticket.EventID); err != nil {
+		return nil, errors.New("error al limpiar entradas traspasadas")
+	}
+
+	// Marcar el ticket original como traspasado: deja de ser del dueño original
+	// (no le aparece más en "mis entradas") pero queda el registro del traspaso.
 	ticket.Status = domain.TicketStatusTransferred
 	ticket.User = domain.User{}
 	ticket.Event = domain.Event{}
@@ -164,12 +172,14 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 		return nil, fmt.Errorf("error generando nuevo QR: %w", err)
 	}
 
-	// Crear ticket nuevo para el nuevo titular
+	// Crear ticket nuevo para el nuevo titular, conservando tipo y precio
 	newTicket := &domain.Ticket{
-		UserID:  targetUser.ID,
-		EventID: ticket.EventID,
-		Status:  domain.TicketStatusActive,
-		QRCode:  newQR,
+		UserID:     targetUser.ID,
+		EventID:    ticket.EventID,
+		Status:     domain.TicketStatusActive,
+		QRCode:     newQR,
+		TicketType: ticket.TicketType,
+		Price:      ticket.Price,
 	}
 	if err := s.ticketDAO.Create(newTicket); err != nil {
 		return nil, errors.New("error al crear entrada para el nuevo titular")

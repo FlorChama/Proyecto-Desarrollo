@@ -87,10 +87,10 @@ func seedAdmin(db *gorm.DB) {
 	log.Printf("Administrador inicial creado: %s", email)
 }
 
-func main() {
-	db := initDB()
-	seedAdmin(db)
-
+// SetupRouter arma el router con todos los DAOs, services, controllers y rutas a
+// partir de una conexión a la base. Se separó de main() para poder construir el
+// mismo router en los tests sin levantar el servidor ni depender de MySQL.
+func SetupRouter(db *gorm.DB) *gin.Engine {
 	// DAOs
 	userDAO := dao.NewUserDAO(db)
 	eventDAO := dao.NewEventDAO(db)
@@ -164,6 +164,15 @@ func main() {
 			admin.GET("/events/:id/report", ticketCtrl.GetEventReport)
 		}
 	}
+
+	return r
+}
+
+func main() {
+	db := initDB()
+	seedAdmin(db)
+
+	r := SetupRouter(db)
 
 	port := os.Getenv("PORT")
 	if port == "" {
