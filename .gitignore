@@ -35,4 +35,5 @@ conocimiento-desarrollo-software/
 backend/cov
 backend/cov_sc
 backend/coverage
+coverage
 .gstack/
