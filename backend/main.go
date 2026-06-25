@@ -16,7 +16,10 @@ import (
 	"gorm.io/gorm"
 )
 
-func initDB() *gorm.DB {
+// buildDSN arma la cadena de conexión a MySQL leyendo las variables de entorno
+// y aplicando los valores por defecto. Se separó de initDB para poder testear
+// los valores por defecto sin necesidad de conectarse a una base real.
+func buildDSN() string {
 	host := os.Getenv("DB_HOST")
 	user := os.Getenv("DB_USER")
 	pass := os.Getenv("DB_PASS")
@@ -39,8 +42,12 @@ func initDB() *gorm.DB {
 		port = "3306"
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		user, pass, host, port, name)
+}
+
+func initDB() *gorm.DB {
+	dsn := buildDSN()
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
