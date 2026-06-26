@@ -22,21 +22,32 @@ func NewTicketController(ticketService *services.TicketService) *TicketControlle
 func (ctrl *TicketController) Buy(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
-	var body struct {
-		EventID uint `json:"event_id" binding:"required"`
-	}
+	var body domain.BuyTicketRequest
 	if err := c.ShouldBindJSON(&body); err != nil {
 		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	ticket, err := ctrl.ticketService.Buy(userID, body.EventID)
+	ticket, err := ctrl.ticketService.Buy(userID, body.EventID, body.PaymentMethod, body.TicketType)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		utils.HandleServiceError(c, err)
 		return
 	}
 
 	utils.CreatedResponse(c, ticket)
+}
+
+// GetMyPayments - GET /api/tickets/payments (cliente autenticado)
+func (ctrl *TicketController) GetMyPayments(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	payments, err := ctrl.ticketService.GetMyPayments(userID)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SuccessResponse(c, payments)
 }
 
 // GetMyTickets - GET /api/tickets/my (cliente autenticado)
@@ -63,7 +74,7 @@ func (ctrl *TicketController) Cancel(c *gin.Context) {
 	}
 
 	if err := ctrl.ticketService.Cancel(uint(id), userID); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		utils.HandleServiceError(c, err)
 		return
 	}
 
@@ -88,7 +99,7 @@ func (ctrl *TicketController) Transfer(c *gin.Context) {
 
 	ticket, err := ctrl.ticketService.Transfer(uint(id), userID, req)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		utils.HandleServiceError(c, err)
 		return
 	}
 
@@ -105,7 +116,7 @@ func (ctrl *TicketController) GetEventReport(c *gin.Context) {
 
 	report, err := ctrl.ticketService.GetEventReport(uint(id))
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusNotFound, err.Error())
+		utils.HandleServiceError(c, err)
 		return
 	}
 

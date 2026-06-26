@@ -27,15 +27,38 @@ func (d *TicketDAO) FindByID(id uint) (*domain.Ticket, error) {
 	return &ticket, nil
 }
 
+// FindByUserID trae las entradas de un usuario para "mis entradas". Excluye las
+// traspasadas: una vez que el usuario traspasa una entrada deja de ser suya, así
+// que no tiene que seguir viéndola en su listado.
 func (d *TicketDAO) FindByUserID(userID uint) ([]domain.Ticket, error) {
 	var tickets []domain.Ticket
-	err := d.db.Preload("Event").Where("user_id = ?", userID).Find(&tickets).Error
+	err := d.db.Preload("Event").
+		Where("user_id = ? AND status <> ?", userID, domain.TicketStatusTransferred).
+		Find(&tickets).Error
 	return tickets, err
+}
+
+// DeleteTransferredByUserAndEvent borra las entradas que un usuario tenía
+// marcadas como traspasadas para un evento. Se usa cuando una entrada "vuelve" a
+// ese usuario (se la traspasan de nuevo): así no le queda el registro viejo de
+// traspaso dando vueltas.
+func (d *TicketDAO) DeleteTransferredByUserAndEvent(userID, eventID uint) error {
+	return d.db.
+		Where("user_id = ? AND event_id = ? AND status = ?", userID, eventID, domain.TicketStatusTransferred).
+		Delete(&domain.Ticket{}).Error
 }
 
 func (d *TicketDAO) FindByEventID(eventID uint) ([]domain.Ticket, error) {
 	var tickets []domain.Ticket
 	err := d.db.Preload("User").Where("event_id = ? AND status = ?", eventID, domain.TicketStatusActive).Find(&tickets).Error
+	return tickets, err
+}
+
+// FindAllByEventID trae todas las entradas de un evento sin importar su estado
+// (activas y canceladas). Se usa para los reportes.
+func (d *TicketDAO) FindAllByEventID(eventID uint) ([]domain.Ticket, error) {
+	var tickets []domain.Ticket
+	err := d.db.Preload("User").Where("event_id = ?", eventID).Find(&tickets).Error
 	return tickets, err
 }
 

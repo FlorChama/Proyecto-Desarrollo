@@ -3,32 +3,31 @@ package services
 import (
 	"errors"
 	"fmt"
-	"ticketek-backend/clients"
 	"ticketek-backend/dao"
 	"ticketek-backend/domain"
 	"ticketek-backend/utils"
 )
 
 type TicketService struct {
-	ticketDAO   *dao.TicketDAO
-	eventDAO    *dao.EventDAO
-	userDAO     *dao.UserDAO
-	emailClient *clients.EmailClient
+	ticketDAO  *dao.TicketDAO
+	eventDAO   *dao.EventDAO
+	userDAO    *dao.UserDAO
+	paymentDAO *dao.PaymentDAO
 }
 
-func NewTicketService(ticketDAO *dao.TicketDAO, eventDAO *dao.EventDAO, userDAO *dao.UserDAO, emailClient *clients.EmailClient) *TicketService {
+func NewTicketService(ticketDAO *dao.TicketDAO, eventDAO *dao.EventDAO, userDAO *dao.UserDAO, paymentDAO *dao.PaymentDAO) *TicketService {
 	return &TicketService{
-		ticketDAO:   ticketDAO,
-		eventDAO:    eventDAO,
-		userDAO:     userDAO,
-		emailClient: emailClient,
+		ticketDAO:  ticketDAO,
+		eventDAO:   eventDAO,
+		userDAO:    userDAO,
+		paymentDAO: paymentDAO,
 	}
 }
 
-func (s *TicketService) Buy(userID, eventID uint) (*domain.Ticket, error) {
+func (s *TicketService) Buy(userID, eventID uint, paymentMethod, ticketType string) (*domain.Ticket, error) {
 	event, err := s.eventDAO.FindByID(eventID)
 	if err != nil {
-		return nil, errors.New("evento no encontrado")
+		return nil, domain.ErrEventoNoEncontrado
 	}
 	if event.Status == domain.EventStatusCancelled {
 		return nil, errors.New("el evento está cancelado")
@@ -37,16 +36,29 @@ func (s *TicketService) Buy(userID, eventID uint) (*domain.Ticket, error) {
 		return nil, errors.New("no hay entradas disponibles")
 	}
 
-	user, err := s.userDAO.FindByID(userID)
-	if err != nil {
-		return nil, errors.New("usuario no encontrado")
+	if _, err := s.userDAO.FindByID(userID); err != nil {
+		return nil, domain.ErrUsuarioNoEncontrado
 	}
 
+	if ticketType == "" {
+		ticketType = "general"
+	}
+	// El precio es una regla de negocio: lo define el servidor según el evento y
+	// el tipo de entrada, nunca el cliente.
+	pricePerTicket := event.Price
+	if ticketType == "vip" {
+		if event.VIPPrice <= 0 {
+			return nil, errors.New("este evento no tiene entradas VIP disponibles")
+		}
+		pricePerTicket = event.VIPPrice
+	}
 	ticket := &domain.Ticket{
-		UserID:  userID,
-		EventID: eventID,
-		Status:  domain.TicketStatusActive,
-		QRCode:  "",
+		UserID:     userID,
+		EventID:    eventID,
+		Status:     domain.TicketStatusActive,
+		QRCode:     "",
+		TicketType: ticketType,
+		Price:      pricePerTicket,
 	}
 
 	if err := s.ticketDAO.Create(ticket); err != nil {
@@ -69,8 +81,16 @@ func (s *TicketService) Buy(userID, eventID uint) (*domain.Ticket, error) {
 		return nil, errors.New("error actualizando disponibilidad")
 	}
 
-	// Bonus: notificación por email
-	go s.emailClient.SendPurchaseConfirmation(user.Email, user.Name, event.Title, qrCode)
+	payment := &domain.Payment{
+		TicketID: ticket.ID,
+		UserID:   userID,
+		Amount:   pricePerTicket,
+		Method:   paymentMethod,
+		Status:   domain.PaymentStatusApproved,
+	}
+	if err := s.paymentDAO.Create(payment); err != nil {
+		return nil, errors.New("error al registrar el pago")
+	}
 
 	return ticket, nil
 }
@@ -79,13 +99,17 @@ func (s *TicketService) GetMyTickets(userID uint) ([]domain.Ticket, error) {
 	return s.ticketDAO.FindByUserID(userID)
 }
 
+func (s *TicketService) GetMyPayments(userID uint) ([]domain.Payment, error) {
+	return s.paymentDAO.FindByUserID(userID)
+}
+
 func (s *TicketService) Cancel(ticketID, userID uint) error {
 	ticket, err := s.ticketDAO.FindByID(ticketID)
 	if err != nil {
-		return errors.New("entrada no encontrada")
+		return domain.ErrEntradaNoEncontrada
 	}
 	if ticket.UserID != userID {
-		return errors.New("no tenés permiso para cancelar esta entrada")
+		return domain.ErrSinPermiso
 	}
 	if ticket.Status != domain.TicketStatusActive {
 		return errors.New("la entrada no está activa")
@@ -108,10 +132,10 @@ func (s *TicketService) Cancel(ticketID, userID uint) error {
 func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequest) (*domain.Ticket, error) {
 	ticket, err := s.ticketDAO.FindByID(ticketID)
 	if err != nil {
-		return nil, errors.New("entrada no encontrada")
+		return nil, domain.ErrEntradaNoEncontrada
 	}
 	if ticket.UserID != ownerID {
-		return nil, errors.New("no tenés permiso para traspasar esta entrada")
+		return nil, domain.ErrSinPermiso
 	}
 	if ticket.Status != domain.TicketStatusActive {
 		return nil, errors.New("la entrada no está activa")
@@ -119,15 +143,26 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 
 	targetUser, err := s.userDAO.FindByEmail(req.TargetEmail)
 	if err != nil {
-		return nil, errors.New("usuario destino no encontrado")
+		return nil, domain.ErrUsuarioNoEncontrado
 	}
 	if targetUser.ID == ownerID {
 		return nil, errors.New("no podés traspasar la entrada a vos mismo")
 	}
 
-	owner, err := s.userDAO.FindByID(ownerID)
-	if err != nil {
-		return nil, errors.New("error obteniendo datos del propietario")
+	// Si la entrada "vuelve" al destinatario (antes él la había traspasado),
+	// borramos su registro viejo de traspaso para ese evento así no le queda
+	// duplicado en la base.
+	if err := s.ticketDAO.DeleteTransferredByUserAndEvent(targetUser.ID, ticket.EventID); err != nil {
+		return nil, errors.New("error al limpiar entradas traspasadas")
+	}
+
+	// Marcar el ticket original como traspasado: deja de ser del dueño original
+	// (no le aparece más en "mis entradas") pero queda el registro del traspaso.
+	ticket.Status = domain.TicketStatusTransferred
+	ticket.User = domain.User{}
+	ticket.Event = domain.Event{}
+	if err := s.ticketDAO.Update(ticket); err != nil {
+		return nil, errors.New("error al traspasar la entrada")
 	}
 
 	// Generar nuevo QR para el nuevo titular
@@ -137,38 +172,34 @@ func (s *TicketService) Transfer(ticketID, ownerID uint, req domain.TransferRequ
 		return nil, fmt.Errorf("error generando nuevo QR: %w", err)
 	}
 
-	ticket.UserID = targetUser.ID
-	ticket.QRCode = newQR
-	ticket.Status = domain.TicketStatusActive
-
-	if err := s.ticketDAO.Update(ticket); err != nil {
-		return nil, errors.New("error al traspasar la entrada")
+	// Crear ticket nuevo para el nuevo titular, conservando tipo y precio
+	newTicket := &domain.Ticket{
+		UserID:     targetUser.ID,
+		EventID:    ticket.EventID,
+		Status:     domain.TicketStatusActive,
+		QRCode:     newQR,
+		TicketType: ticket.TicketType,
+		Price:      ticket.Price,
+	}
+	if err := s.ticketDAO.Create(newTicket); err != nil {
+		return nil, errors.New("error al crear entrada para el nuevo titular")
 	}
 
-	event, _ := s.eventDAO.FindByID(ticket.EventID)
-	eventTitle := ""
-	if event != nil {
-		eventTitle = event.Title
-	}
-
-	// Bonus: notificación por email al nuevo titular
-	go s.emailClient.SendTransferNotification(targetUser.Email, targetUser.Name, owner.Name, eventTitle, newQR)
-
-	return ticket, nil
+	return newTicket, nil
 }
 
 func (s *TicketService) GetEventReport(eventID uint) (*domain.EventReportResponse, error) {
 	event, err := s.eventDAO.FindByID(eventID)
 	if err != nil {
-		return nil, errors.New("evento no encontrado")
+		return nil, domain.ErrEventoNoEncontrado
 	}
 
-	tickets, err := s.ticketDAO.FindByEventID(eventID)
+	allTickets, err := s.ticketDAO.FindAllByEventID(eventID)
 	if err != nil {
 		return nil, errors.New("error obteniendo tickets")
 	}
 
-	allTickets, _ := s.ticketDAO.FindByEventID(eventID)
+	sold := 0
 	cancelled := 0
 	buyers := []domain.User{}
 	seen := map[uint]bool{}
@@ -176,6 +207,8 @@ func (s *TicketService) GetEventReport(eventID uint) (*domain.EventReportRespons
 	for _, t := range allTickets {
 		if t.Status == domain.TicketStatusCancelled {
 			cancelled++
+		} else {
+			sold++
 		}
 		if !seen[t.UserID] {
 			buyers = append(buyers, t.User)
@@ -187,7 +220,7 @@ func (s *TicketService) GetEventReport(eventID uint) (*domain.EventReportRespons
 		EventID:        event.ID,
 		Title:          event.Title,
 		TotalCapacity:  event.Capacity,
-		TotalSold:      len(tickets),
+		TotalSold:      sold,
 		TotalCancelled: cancelled,
 		Available:      event.Available,
 		Buyers:         buyers,

@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react'
-import { getEvents, createEvent, updateEvent, deleteEvent, getEventReport } from '../services/api'
+import { useState, useEffect, useRef } from 'react'
+import { getAdminEvents, createEvent, updateEvent, deleteEvent, getEventReport, uploadEventImage } from '../services/api'
 import styles from './AdminPanel.module.css'
 
-const emptyForm = { title: '', description: '', date: '', duration: '', venue: '', capacity: '', category: '', image_url: '', price: '' }
+const emptyForm = {
+  title: '', description: '', date: '', duration: '',
+  venue: '', capacity: '', category: '', image_url: '', price: '', vip_price: ''
+}
 
 export default function AdminPanel() {
   const [events, setEvents] = useState([])
@@ -14,12 +17,16 @@ export default function AdminPanel() {
   const [saving, setSaving] = useState(false)
   const [report, setReport] = useState(null)
   const [message, setMessage] = useState(null)
+  const [imagePreview, setImagePreview] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
 
   const fetchEvents = async () => {
     setLoading(true)
     try {
-      const res = await getEvents()
-      setEvents(res.data.data || [])
+      const res = await getAdminEvents()
+      const all = res.data.data || []
+      setEvents(all.filter(e => e.status !== 'cancelled'))
     } finally {
       setLoading(false)
     }
@@ -30,7 +37,13 @@ export default function AdminPanel() {
   const handleEdit = (event) => {
     setEditingEvent(event)
     const dateStr = new Date(event.date).toISOString().slice(0, 16)
-    setForm({ title: event.title, description: event.description, date: dateStr, duration: event.duration, venue: event.venue, capacity: event.capacity, category: event.category, image_url: event.image_url, price: event.price })
+    setForm({
+      title: event.title, description: event.description, date: dateStr,
+      duration: event.duration, venue: event.venue, capacity: event.capacity,
+      category: event.category, image_url: event.image_url,
+      price: event.price, vip_price: event.vip_price || ''
+    })
+    setImagePreview(event.image_url || '')
     setShowForm(true)
     setFormError('')
   }
@@ -38,8 +51,24 @@ export default function AdminPanel() {
   const handleNew = () => {
     setEditingEvent(null)
     setForm(emptyForm)
+    setImagePreview('')
     setShowForm(true)
     setFormError('')
+  }
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setImagePreview(URL.createObjectURL(file))
+    setUploading(true)
+    try {
+      const res = await uploadEventImage(file)
+      setForm(f => ({ ...f, image_url: res.data.data.url }))
+    } catch {
+      setFormError('Error al subir la imagen')
+    } finally {
+      setUploading(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -51,7 +80,14 @@ export default function AdminPanel() {
     setSaving(true)
     setFormError('')
     try {
-      const payload = { ...form, capacity: Number(form.capacity), duration: Number(form.duration), price: Number(form.price), date: new Date(form.date).toISOString() }
+      const payload = {
+        ...form,
+        capacity: Number(form.capacity),
+        duration: Number(form.duration),
+        price: Number(form.price),
+        vip_price: Number(form.vip_price) || 0,
+        date: new Date(form.date).toISOString()
+      }
       if (editingEvent) {
         await updateEvent(editingEvent.ID, payload)
         setMessage({ type: 'success', text: 'Evento actualizado' })
@@ -114,7 +150,8 @@ export default function AdminPanel() {
                 <th>Fecha</th>
                 <th>Cap.</th>
                 <th>Dispon.</th>
-                <th>Precio</th>
+                <th>Precio General</th>
+                <th>Precio VIP</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -128,6 +165,7 @@ export default function AdminPanel() {
                   <td>{ev.capacity}</td>
                   <td>{ev.available}</td>
                   <td>${ev.price?.toLocaleString('es-AR')}</td>
+                  <td>{ev.vip_price > 0 ? `$${ev.vip_price?.toLocaleString('es-AR')}` : '—'}</td>
                   <td><span className={ev.status === 'active' ? styles.statusActive : styles.statusCancelled}>{ev.status}</span></td>
                   <td>
                     <div className={styles.actionBtns}>
@@ -171,27 +209,61 @@ export default function AdminPanel() {
                   <input type="number" value={form.capacity} onChange={(e) => setForm({...form, capacity: e.target.value})} placeholder="1000" min="1" />
                 </div>
                 <div className={styles.field}>
-                  <label>Precio *</label>
+                  <label>Precio General *</label>
                   <input type="number" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})} placeholder="0" min="0" />
+                </div>
+                <div className={styles.field}>
+                  <label>Precio VIP</label>
+                  <input type="number" value={form.vip_price} onChange={(e) => setForm({...form, vip_price: e.target.value})} placeholder="0 (opcional)" min="0" />
                 </div>
                 <div className={styles.field}>
                   <label>Categoría</label>
                   <select value={form.category} onChange={(e) => setForm({...form, category: e.target.value})}>
                     <option value="">Seleccionar</option>
-                    {['Música', 'Teatro', 'Deporte', 'Arte', 'Tecnología', 'Otro'].map(c => <option key={c}>{c}</option>)}
+                    <option value="internacional">Música Internacional</option>
+                    <option value="nacional">Música Nacional</option>
+                    <option value="teatro">Teatro</option>
+                    <option value="standup">Stand up</option>
+                    <option value="deporte">Deporte</option>
+                    <option value="arte">Arte</option>
                   </select>
                 </div>
-                <div className={styles.field}>
-                  <label>URL Imagen</label>
-                  <input value={form.image_url} onChange={(e) => setForm({...form, image_url: e.target.value})} placeholder="https://..." />
+
+                {/* Imagen */}
+                <div className={`${styles.field} ${styles.fullWidth}`}>
+                  <label>Imagen del evento</label>
+                  <div className={styles.imageUploadArea} onClick={() => fileInputRef.current?.click()}>
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="preview" className={styles.imagePreview} />
+                    ) : (
+                      <div className={styles.imagePlaceholder}>
+                        <span>+</span>
+                        <p>Hacé clic para subir una imagen</p>
+                      </div>
+                    )}
+                    {uploading && <div className={styles.uploadingOverlay}>Subiendo...</div>}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    style={{ display: 'none' }}
+                  />
+                  {imagePreview && (
+                    <button type="button" className={styles.removeImageBtn} onClick={() => { setImagePreview(''); setForm(f => ({...f, image_url: ''})) }}>
+                      Quitar imagen
+                    </button>
+                  )}
                 </div>
               </div>
+
               <div className={`${styles.field} ${styles.fullWidth}`}>
                 <label>Descripción</label>
                 <textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} placeholder="Descripción del evento..." rows={3} />
               </div>
               <div className={styles.modalActions}>
-                <button type="submit" disabled={saving} className={styles.saveBtn}>
+                <button type="submit" disabled={saving || uploading} className={styles.saveBtn}>
                   {saving ? 'Guardando...' : 'Guardar'}
                 </button>
                 <button type="button" onClick={() => setShowForm(false)} className={styles.cancelModalBtn}>
@@ -213,19 +285,6 @@ export default function AdminPanel() {
               <div className={styles.reportStat}><span>{report.total_cancelled}</span><label>Canceladas</label></div>
               <div className={styles.reportStat}><span>{report.available}</span><label>Disponibles</label></div>
             </div>
-            {report.buyers?.length > 0 && (
-              <div className={styles.buyerList}>
-                <h3>Compradores ({report.buyers.length})</h3>
-                <div className={styles.buyers}>
-                  {report.buyers.map((b) => (
-                    <div key={b.ID} className={styles.buyer}>
-                      <span>{b.name}</span>
-                      <span>{b.email}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
             <button onClick={() => setReport(null)} className={styles.closeBtn}>Cerrar</button>
           </div>
         </div>

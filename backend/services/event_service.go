@@ -18,10 +18,14 @@ func (s *EventService) GetAll(filter domain.EventFilterRequest) ([]domain.Event,
 	return s.eventDAO.FindAll(filter)
 }
 
+func (s *EventService) GetAllAdmin() ([]domain.Event, error) {
+	return s.eventDAO.FindAllAdmin()
+}
+
 func (s *EventService) GetByID(id uint) (*domain.Event, error) {
 	event, err := s.eventDAO.FindByID(id)
 	if err != nil {
-		return nil, errors.New("evento no encontrado")
+		return nil, domain.ErrEventoNoEncontrado
 	}
 	return event, nil
 }
@@ -31,6 +35,7 @@ func (s *EventService) Create(req domain.CreateEventRequest) (*domain.Event, err
 		Title:       req.Title,
 		Description: req.Description,
 		Date:        req.Date,
+		ExtraDates:  req.ExtraDates,
 		Duration:    req.Duration,
 		Venue:       req.Venue,
 		Capacity:    req.Capacity,
@@ -38,6 +43,7 @@ func (s *EventService) Create(req domain.CreateEventRequest) (*domain.Event, err
 		Category:    req.Category,
 		ImageURL:    req.ImageURL,
 		Price:       req.Price,
+		VIPPrice:    req.VIPPrice,
 		Status:      domain.EventStatusActive,
 	}
 
@@ -50,7 +56,7 @@ func (s *EventService) Create(req domain.CreateEventRequest) (*domain.Event, err
 func (s *EventService) Update(id uint, req domain.UpdateEventRequest) (*domain.Event, error) {
 	event, err := s.eventDAO.FindByID(id)
 	if err != nil {
-		return nil, errors.New("evento no encontrado")
+		return nil, domain.ErrEventoNoEncontrado
 	}
 	if event.Status == domain.EventStatusCancelled {
 		return nil, errors.New("no se puede modificar un evento cancelado")
@@ -85,8 +91,14 @@ func (s *EventService) Update(id uint, req domain.UpdateEventRequest) (*domain.E
 	if req.ImageURL != "" {
 		event.ImageURL = req.ImageURL
 	}
-	if req.Price >= 0 {
+	if req.Price > 0 {
 		event.Price = req.Price
+	}
+	if req.VIPPrice >= 0 {
+		event.VIPPrice = req.VIPPrice
+	}
+	if req.ExtraDates != "" {
+		event.ExtraDates = req.ExtraDates
 	}
 
 	if err := s.eventDAO.Update(event); err != nil {
@@ -98,7 +110,7 @@ func (s *EventService) Update(id uint, req domain.UpdateEventRequest) (*domain.E
 func (s *EventService) Cancel(id uint) error {
 	_, err := s.eventDAO.FindByID(id)
 	if err != nil {
-		return errors.New("evento no encontrado")
+		return domain.ErrEventoNoEncontrado
 	}
 	return s.eventDAO.Delete(id)
 }

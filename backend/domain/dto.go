@@ -24,24 +24,28 @@ type CreateEventRequest struct {
 	Title       string    `json:"title" binding:"required"`
 	Description string    `json:"description"`
 	Date        time.Time `json:"date" binding:"required"`
+	ExtraDates  string    `json:"extra_dates"`
 	Duration    int       `json:"duration"`
 	Venue       string    `json:"venue" binding:"required"`
 	Capacity    int       `json:"capacity" binding:"required,min=1"`
 	Category    string    `json:"category"`
 	ImageURL    string    `json:"image_url"`
 	Price       float64   `json:"price" binding:"required,min=0"`
+	VIPPrice    float64   `json:"vip_price"`
 }
 
 type UpdateEventRequest struct {
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Date        time.Time `json:"date"`
+	ExtraDates  string    `json:"extra_dates"`
 	Duration    int       `json:"duration"`
 	Venue       string    `json:"venue"`
 	Capacity    int       `json:"capacity"`
 	Category    string    `json:"category"`
 	ImageURL    string    `json:"image_url"`
 	Price       float64   `json:"price"`
+	VIPPrice    float64   `json:"vip_price"`
 }
 
 type EventFilterRequest struct {
@@ -50,7 +54,23 @@ type EventFilterRequest struct {
 	Available bool   `form:"available"`
 }
 
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=6"`
+}
+
+type ResetPasswordRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
 // Ticket
+type BuyTicketRequest struct {
+	EventID       uint   `json:"event_id" binding:"required"`
+	PaymentMethod string `json:"payment_method" binding:"required"`
+	TicketType    string `json:"ticket_type"`
+}
+
 type TransferRequest struct {
 	TargetEmail string `json:"target_email" binding:"required,email"`
 }

@@ -1,47 +1,52 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --primary: #0d0f1a;
-  --secondary: #12152b;
-  --accent: #7c3aed;
-  --accent-hover: #6d28d9;
-  --accent-light: #a855f7;
-  --accent-glow: rgba(124, 58, 237, 0.35);
-  --text: #f0f0f5;
-  --text-muted: #9da3b8;
-  --card-bg: #161929;
-  --card-hover: #1c2035;
-  --border: #252a45;
-  --border-light: #2e3560;
-  --success: #22c55e;
-  --error: #ef4444;
-  --warning: #f59e0b;
-  --gradient-hero: linear-gradient(135deg, #0d0f1a 0%, #1a1040 50%, #0d0f1a 100%);
+  /* Marca */
+  --primary:        #A348B3;
+  --primary-hover:  #B856C8;
+  --primary-light:  rgba(163, 72, 179, 0.12);
+  --primary-glow:   rgba(163, 72, 179, 0.3);
+  --gradient-btn:   linear-gradient(135deg, #A348B3, #C056D4);
+
+  /* Fondos */
+  --bg-dark:        #0A0A12;
+  --bg-dark-2:      #12121E;
+  --bg-light:       #F5F5F7;
+  --bg-white:       #FFFFFF;
+
+  /* Texto en fondo oscuro */
+  --text-dark:      #FFFFFF;
+  --text-dark-muted:#A1A1AA;
+
+  /* Texto en fondo claro */
+  --text-light:     #111111;
+  --text-light-muted:#6B6B7B;
+
+  /* Bordes */
+  --border-dark:    #2B2B3B;
+  --border-light:   #E5E5EA;
+
+  /* Cards */
+  --card-dark:      #151522;
+  --card-light:     #FFFFFF;
+
+  /* Estados */
+  --success:        #22C55E;
+  --error:          #EF4444;
+  --warning:        #F59E0B;
+  --info:           #22D3EE;
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: var(--primary);
-  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-dark);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  cursor: pointer;
-  border: none;
-  outline: none;
-  font-family: inherit;
-}
-
-input, textarea, select {
-  font-family: inherit;
-}
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+input, textarea, select { font-family: inherit; }

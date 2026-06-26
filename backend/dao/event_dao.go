@@ -18,6 +18,12 @@ func (d *EventDAO) Create(event *domain.Event) error {
 	return d.db.Create(event).Error
 }
 
+func (d *EventDAO) FindAllAdmin() ([]domain.Event, error) {
+	var events []domain.Event
+	err := d.db.Order("created_at DESC").Find(&events).Error
+	return events, err
+}
+
 func (d *EventDAO) FindAll(filter domain.EventFilterRequest) ([]domain.Event, error) {
 	var events []domain.Event
 	query := d.db.Where("status = ?", domain.EventStatusActive)

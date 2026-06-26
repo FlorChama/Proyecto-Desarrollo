@@ -23,3 +23,17 @@ Thumbs.db
 
 # Claude (herramienta local, no sube al repo)
 .claude/
+
+# Material interno de trabajo / estudio (no forma parte del entregable)
+CLAUDE.md
+PLAN-proyecto-integrador.md
+conocimiento-desarrollo-software/
+*.pdf
+
+# Cobertura de tests
+*.out
+backend/cov
+backend/cov_sc
+backend/coverage
+coverage
+.gstack/

@@ -7,6 +7,9 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import MyTickets from './pages/MyTickets'
 import AdminPanel from './pages/AdminPanel'
+import Checkout from './pages/Checkout'
+import Profile from './pages/Profile'
+import ResetPassword from './pages/ResetPassword'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { isAuthenticated, isAdmin, loading } = useAuth()
@@ -25,11 +28,19 @@ function AppRoutes() {
         <Route path="/eventos/:id" element={<EventDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/checkout/:id" element={
+          <ProtectedRoute><Checkout /></ProtectedRoute>
+        } />
         <Route path="/mis-entradas" element={
           <ProtectedRoute><MyTickets /></ProtectedRoute>
         } />
         <Route path="/admin" element={
           <ProtectedRoute adminOnly><AdminPanel /></ProtectedRoute>
+        } />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/perfil" element={
+          <ProtectedRoute><Profile /></ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
